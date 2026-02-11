@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}🔐 Login – Ouhud QR{% endblock %}
+
+{% block content %}
+<div class="auth-page-wrapper">
+  <div class="auth-container">
+    <div class="auth-card">
+      <header class="auth-header">
+        <a href="/" class="auth-logo">
+          <img src="/static/logo.png" alt="Ouhud QR Logo">
+        </a>
+        <h1>Willkommen zurück</h1>
+        <p>Logge dich ein, um deine QR-Codes zu verwalten.</p>
+      </header>
+
+      {% if error %}
+      <div class="auth-alert">
+        <span class="alert-icon">⚠️</span>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="post" action="/auth/login" class="auth-form">
+        <div class="input-group">
+          <label for="email">E-Mail-Adresse</label>
+          <div class="input-wrapper">
+            <span class="input-icon">✉️</span>
+            <input type="email" id="email" name="email" placeholder="beispiel@domain.de" required autofocus>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="label-row">
+            <label for="password">Passwort</label>
+            <a href="/auth/forgot-password" class="label-link">Passwort vergessen?</a>
+          </div>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="password" name="password" placeholder="••••••••" required>
+            <button type="button" class="eye-toggle" onclick="togglePassword()" title="Passwort anzeigen">👁️</button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="otp_code">2FA-Code {% if require_2fa %}*{% else %}(falls aktiviert){% endif %}</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🛡️</span>
+            <input type="text" id="otp_code" name="otp_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" {% if require_2fa %}required{% endif %}>
+          </div>
+        </div>
+
+        <button type="submit" class="auth-submit-btn">
+          Anmelden <span>→</span>
+        </button>
+      </form>
+
+      <footer class="auth-footer">
+        <div class="divider"><span>oder</span></div>
+        <p>Neu bei Ouhud QR? <a href="/auth/register">Konto erstellen</a></p>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<style>
+/* === AUTH GLOBAL STYLES === */
+:root {
+  --auth-bg: #f3f4f6;
+  --auth-primary: #0D2A78;
+  --auth-accent: #2563eb;
+  --auth-text-main: #1f2937;
+  --auth-text-muted: #6b7280;
+  --auth-card-bg: #ffffff;
+  --auth-border: #e5e7eb;
+}
+
+.auth-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top right, #e0e7ff 0%, #f3f4f6 50%);
+  padding: 20px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 440px;
+}
+
+.auth-card {
+  background: var(--auth-card-bg);
+  padding: 48px 40px;
+  border-radius: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* === HEADER === */
+.auth-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-logo img {
+  height: 56px;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.auth-logo:hover img {
+  transform: scale(1.05);
+}
+
+.auth-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--auth-primary);
+  margin: 0 0 8px 0;
+}
+
+.auth-header p {
+  color: var(--auth-text-muted);
+  font-size: 15px;
+  margin: 0;
+}
+
+/* === FORM ELEMENTS === */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.input-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--auth-text-main);
+}
+
+.label-link {
+  font-size: 13px;
+  color: var(--auth-accent);
+  text-decoration: none;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border: 1.5px solid var(--auth-border);
+  border-radius: 12px;
+  font-size: 15px;
+  color: #000;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper input:focus {
+  border-color: var(--auth-accent);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* Eye Icon Button */
+.eye-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 16px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.eye-toggle:hover { opacity: 1; }
+
+/* === BUTTON === */
+.auth-submit-btn {
+  margin-top: 10px;
+  padding: 14px;
+  background: var(--auth-primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.auth-submit-btn:hover {
+  background: #092160;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 42, 120, 0.2);
+}
+
+/* === ALERTS === */
+.auth-alert {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* === FOOTER === */
+.auth-footer {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.divider {
+  position: relative;
+  height: 1px;
+  background: var(--auth-border);
+  margin-bottom: 24px;
+}
+
+.divider span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--auth-card-bg);
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--auth-text-muted);
+}
+
+.auth-footer p {
+  font-size: 14px;
+  color: var(--auth-text-muted);
+}
+
+.auth-footer a {
+  color: var(--auth-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Autofill Fix */
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
+  -webkit-text-fill-color: #000 !important;
+}
+</style>
+
+<script>
+function togglePassword() {
+  const p = document.getElementById("password");
+  const btn = document.querySelector(".eye-toggle");
+  if (p.type === "password") {
+    p.type = "text";
+    btn.textContent = "🙈";
+  } else {
+    p.type = "password";
+    btn.textContent = "👁️";
+  }
+}
+
+(() => {
+  const email = document.getElementById("email");
+  const prefill = "{{ prefill_email or '' }}";
+  if (email && prefill) email.value = prefill;
+})();
+</script>
+{% endblock %}

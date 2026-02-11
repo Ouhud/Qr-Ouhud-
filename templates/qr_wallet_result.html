@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Wallet QR erstellt{% endblock %}
+{% block content %}
+<section class="qr-generator" style="text-align:center;">
+  <h1>✅ Wallet-QR erstellt</h1>
+  {% if qr_image %}<img src="data:image/png;base64,{{ qr_image }}" style="max-width:300px;border-radius:12px;">{% endif %}
+  <p>Der QR-Code nutzt eine dynamische Weiterleitung und kann je nach Gerät Apple oder Google Wallet öffnen.</p>
+  <p><a href="{{ dynamic_url }}" target="_blank" rel="noopener">{{ dynamic_url }}</a></p>
+  <div style="display:flex;justify-content:center;gap:0.8rem;flex-wrap:wrap;margin-top:1rem;">
+    <a href="{{ dynamic_url }}" target="_blank" rel="noopener" class="btn primary">Wallet Pass öffnen</a>
+    {% if qr %}
+      <a href="/qr/edit/{{ qr.slug }}" class="btn secondary">Bearbeiten</a>
+    {% endif %}
+    <button type="button" class="btn secondary" onclick="window.print()">🖨️ Drucken</button>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}📞 Telefon-QR-Code – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator">
+  <h1>📞 Telefon-QR-Code erstellen</h1>
+  <p class="subtitle">
+    Erstelle einen QR-Code, der beim Scannen automatisch eine Telefonnummer anruft.
+  </p>
+
+  <form method="post" action="/qr/tel/" class="qr-form" enctype="multipart/form-data">
+    <!-- === Felder === -->
+    <div class="form-group">
+      <label for="phone">📱 Telefonnummer (mit Landesvorwahl):</label>
+      <input
+        type="tel"
+        id="phone"
+        name="phone"
+        placeholder="+49 176 1234567"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="title">📝 Titel (optional):</label>
+      <input
+        type="text"
+        id="title"
+        name="title"
+        placeholder="z. B. Hotline"
+      />
+    </div>
+
+    <hr class="divider">
+
+    {% set default_style = "modern" %}
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+{% endblock %}

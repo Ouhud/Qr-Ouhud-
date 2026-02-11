@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}✅ SMS-QR-Code Ergebnis{% endblock %}
+
+{% block content %}
+<section class="qr-result">
+  <h1>✅ SMS-QR-Code erstellt!</h1>
+  <p class="subtitle">
+    Scanne diesen Code, um direkt eine SMS zu senden.
+  </p>
+
+  <div class="qr-card">
+    <img src="data:image/png;base64,{{ qr_image }}" alt="QR-Code" class="qr-preview">
+    <p><strong>Empfänger:</strong> {{ phone }}</p>
+    {% if message %}
+    <p><strong>Nachricht:</strong> {{ message }}</p>
+    {% endif %}
+    <a href="sms:{{ phone }}?body={{ message|urlencode }}" class="btn-link">📱 SMS öffnen</a>
+  </div>
+</section>
+
+<style>
+.qr-result {
+  max-width: 900px;
+  margin: 3rem auto;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  text-align: center;
+  font-family: "Inter", system-ui, sans-serif;
+}
+.qr-preview {
+  max-width: 250px;
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+.btn-link {
+  display:inline-block;
+  margin-top:1rem;
+  padding:0.75rem 1.2rem;
+  background:linear-gradient(135deg,#0D2A78,#1E40AF);
+  color:white;
+  text-decoration:none;
+  border-radius:10px;
+  font-weight:600;
+}
+.btn-link:hover {background:linear-gradient(135deg,#0B1742,#1E3A8A);}
+</style>
+{% endblock %}

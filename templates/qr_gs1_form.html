@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}GS1 Digital Link QR{% endblock %}
+{% block content %}
+<section class="qr-generator">
+  <h1>🏷️ GS1 Digital Link Produkt-QR</h1>
+  <form method="post" action="/qr/gs1/generate" enctype="multipart/form-data" class="qr-form">
+    <label>Base URL *</label><input type="url" name="base_url" required placeholder="https://brand.example.com/product">
+    <label>GTIN (AI 01) *</label><input type="text" name="gtin" required placeholder="09506000134352">
+    <label>Batch (AI 10)</label><input type="text" name="batch">
+    <label>Expiry YYMMDD (AI 17)</label><input type="text" name="expiry" placeholder="261231">
+    <label>Serial (AI 21)</label><input type="text" name="serial">
+    <label>Titel</label><input type="text" name="title">
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+{% endblock %}

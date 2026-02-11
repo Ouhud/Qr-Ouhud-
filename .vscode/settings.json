@@ -1,0 +1,69 @@
+{
+  // 🐍 Pfad zum Python-Interpreter (virtuelle Umgebung)
+  "python.defaultInterpreterPath": "venv/bin/python",
+
+  // 📁 Suchpfade für Import-Auflösung (Models, Routes, Utils etc.)
+  "python.analysis.extraPaths": [
+    "./",
+    "./models",
+    "./routes",
+    "./utils"
+  ],
+
+  // 💡 Autovervollständigung für Importe aktivieren
+  "python.autoComplete.extraPaths": [
+    "./",
+    "./models",
+    "./routes",
+    "./utils"
+  ],
+
+  // 🧠 Intelligente Analyse & automatische Typ-Ableitung
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.useLibraryCodeForTypes": true,
+
+  // 🚫 Ordner ausschließen (z. B. virtuelle Umgebung, Cache)
+  "python.analysis.exclude": [
+    "**/venv/**",
+    "**/__pycache__/**",
+    "**/.mypy_cache/**",
+    "**/.pytest_cache/**"
+  ],
+
+  // ⚙️ Pylance-Warnungen, die ignoriert werden sollen
+  "python.analysis.ignore": [
+    "reportPrivateUsage",
+    "reportUnknownVariableType",
+    "reportUnknownMemberType",
+    "reportMissingParameterType",
+    "reportUnknownArgumentType"
+  ],
+
+  // 🟢 Warnschweregrad anpassen (ALLE störenden Meldungen deaktivieren)
+"python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingTypeStubs": "none",        // 🔇 Stub-Warnung ausschalten
+    "reportAttributeAccessIssue": "none",
+    "reportUnknownVariableType": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnknownArgumentType": "none",
+    "reportMissingParameterType": "none",
+    "reportUnusedImport": "none",
+    "reportUnnecessaryComparison": "none",
+    "reportArgumentType": "none"
+},
+
+
+  // 💡 Verbesserte Formatierung und Code-Qualität
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "ms-python.black-formatter",
+
+  // 🚀 Optional: FastAPI-Auto-Reload Debug
+  "terminal.integrated.env.linux": {
+    "PYTHONPATH": "${workspaceFolder}"
+  },
+
+  // 📦 Automatische Aktivierung des virtuellen Environments
+  "python.terminal.activateEnvironment": true
+}
+

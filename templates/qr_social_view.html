@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ name }} – Social Links</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      background: linear-gradient(180deg,#0D2A78,#1E3A8A);
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+    .card {
+      background: white;
+      color: #1e293b;
+      max-width: 420px;
+      margin: auto;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    }
+    h1 { color: #0D2A78; }
+    a {
+      display: block;
+      margin: 0.5rem 0;
+      padding: 0.9rem;
+      border-radius: 12px;
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      background: linear-gradient(135deg,#0D2A78,#1E40AF);
+    }
+    a:hover { transform: scale(1.05); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>{{ name }}</h1>
+    {% if data.website %}<a href="{{ data.website }}">🌐 Website</a>{% endif %}
+    {% if data.facebook %}<a href="{{ data.facebook }}">📘 Facebook</a>{% endif %}
+    {% if data.instagram %}<a href="{{ data.instagram }}">📸 Instagram</a>{% endif %}
+    {% if data.whatsapp %}<a href="{{ data.whatsapp }}">💬 WhatsApp</a>{% endif %}
+    {% if data.linkedin %}<a href="{{ data.linkedin }}">💼 LinkedIn</a>{% endif %}
+    {% if data.xing %}<a href="{{ data.xing }}">🧑‍🎓 Xing</a>{% endif %}
+    {% if data.github %}<a href="{{ data.github }}">🐙 GitHub</a>{% endif %}
+  </div>
+</body>
+</html>

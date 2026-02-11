@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} – Produktansicht{% endblock %}
+
+{% block content %}
+<section class="product-view text-center">
+  <div class="container">
+    <h1>{{ product.name }}</h1>
+    {% if product.image_url %}
+      <img src="{{ product.image_url }}" alt="{{ product.name }}" style="max-width:300px; margin:20px auto; border-radius:12px;">
+    {% endif %}
+    <p class="price"><strong>{{ product.price }} €</strong></p>
+    <p class="description">{{ product.description }}</p>
+    {% if product.link %}
+      <p><a href="{{ product.link }}" target="_blank" class="btn primary">🔗 Zum Produkt</a></p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Review QR{% endblock %}
+{% block content %}
+<section class="qr-generator">
+  <h1>⭐ Bewertungs-QR</h1>
+  <form method="post" action="/qr/review/generate" enctype="multipart/form-data" class="qr-form">
+    <label>Plattform</label><input type="text" name="platform" placeholder="Google, Trustpilot ...">
+    <label>Review URL *</label><input type="url" name="review_url" required>
+    <label>Titel</label><input type="text" name="title">
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}📞 QR-Code Ergebnis – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-style-section">
+  <div class="container text-center">
+    <div class="custom-design">
+      <h2>✅ QR-Code erfolgreich erstellt!</h2>
+      <p class="subtitle">
+        Scanne den Code, um <strong>{{ phone }}</strong> direkt anzurufen.
+      </p>
+
+      <img src="data:image/png;base64,{{ qr_image }}" alt="Telefon-QR-Code" class="qr-preview">
+
+      {% if dynamic_url %}
+      <p class="subtitle">
+        Dynamischer Link: <a href="{{ dynamic_url }}" target="_blank">{{ dynamic_url }}</a>
+      </p>
+      {% endif %}
+
+      <div class="action-buttons">
+        <a href="data:image/png;base64,{{ qr_image }}" download="telefon_qr.png" class="btn primary">⬇️ Herunterladen</a>
+        <a href="/qr/tel/" class="btn secondary">🔙 Neuen Code</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+.qr-preview {
+  width: 260px;
+  height: 260px;
+  margin: 2rem auto;
+  display: block;
+  border-radius: 1rem;
+  box-shadow: 0 8px 25px rgba(13, 42, 120, 0.15);
+}
+</style>
+{% endblock %}

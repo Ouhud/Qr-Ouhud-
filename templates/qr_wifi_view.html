@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}WLAN QR - Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator">
+  <h1>WLAN QR Details</h1>
+  <div class="qr-form">
+    <p><strong>Name (SSID):</strong> {{ data.ssid or '-' }}</p>
+    <p><strong>Verschluesselung:</strong> {{ data.encryption or 'WPA' }}</p>
+    <p><strong>Passwort:</strong> {{ data.password or '-' }}</p>
+    <p><strong>Versteckt:</strong> {{ 'Ja' if data.hidden else 'Nein' }}</p>
+    <p><strong>Dynamischer Link:</strong> <a href="/d/{{ qr.slug }}" target="_blank" rel="noopener">/d/{{ qr.slug }}</a></p>
+    <a class="btn-primary" href="/qr/edit/{{ qr.slug }}">Bearbeiten</a>
+  </div>
+</section>
+{% endblock %}

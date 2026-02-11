@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Booking QR erstellt{% endblock %}
+{% block content %}
+<section class="qr-generator" style="text-align:center;">
+  <h1>✅ Booking-QR erstellt</h1>
+  {% if qr_image %}<img src="data:image/png;base64,{{ qr_image }}" style="max-width:300px;border-radius:12px;">{% endif %}
+  <p><a href="{{ dynamic_url }}" target="_blank">{{ dynamic_url }}</a></p>
+</section>
+{% endblock %}

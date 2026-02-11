@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Feedback{% endblock %}
+{% block content %}
+<section class="qr-generator" style="max-width:760px;">
+  <h1>{{ data.question or "Wie zufrieden sind Sie?" }}</h1>
+  {% if request.query_params.get("submitted") == "1" %}
+    <div class="alert success">Danke für Ihr Feedback.</div>
+  {% endif %}
+  <form method="post" action="/qr/feedback/submit/{{ qr.slug }}" class="qr-form">
+    <label>Score (1-10)</label>
+    <input type="number" name="score" min="1" max="10" required>
+    <label>Kommentar (optional)</label>
+    <textarea name="comment" rows="4"></textarea>
+    <button class="btn-primary" type="submit">Feedback senden</button>
+  </form>
+  <p style="color:#64748b;">{{ data.low_label or "Niedrig" }} - {{ data.high_label or "Hoch" }}</p>
+</section>
+{% endblock %}

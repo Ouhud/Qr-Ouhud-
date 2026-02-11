@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}App Deep Link QR{% endblock %}
+{% block content %}
+<section class="qr-generator">
+  <h1>📲 App-Deep-Link QR</h1>
+  <form method="post" action="/qr/app/generate" enctype="multipart/form-data" class="qr-form">
+    <label>Deep Link *</label><input type="url" name="deep_link" required placeholder="myapp://open/screen">
+    <label>iOS Store URL</label><input type="url" name="ios_store_url">
+    <label>Android Store URL</label><input type="url" name="android_store_url">
+    <label>Web Fallback URL</label><input type="url" name="web_fallback_url">
+    <label>Titel</label><input type="text" name="title">
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+{% endblock %}

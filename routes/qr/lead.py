@@ -1,0 +1,137 @@
+from __future__ import annotations
+
+import base64
+import os
+import uuid
+from pathlib import Path
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+
+from database import get_db
+from models.lead_capture import LeadCapture
+from models.qrcode import QRCode
+from routes.qr.logo_utils import save_qr_logo
+from utils.qr_config import get_qr_style
+from utils.qr_generator import generate_qr_png
+
+router = APIRouter(prefix="/qr/lead", tags=["Lead QR"])
+templates = Jinja2Templates(directory="templates")
+QR_DIR = Path("static/generated_qr")
+QR_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _build_dynamic_url(request: Request, slug: str) -> str:
+    base_url = str(request.base_url).rstrip("/")
+    if "127.0.0.1" in base_url or "localhost" in base_url:
+        return f"{base_url}/d/{slug}"
+    app_domain = os.getenv("APP_DOMAIN", "").rstrip("/")
+    return f"{(app_domain or base_url)}/d/{slug}"
+
+
+@router.get("/", response_class=HTMLResponse)
+def show_form(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("qr_lead_form.html", {"request": request})
+
+
+@router.post("/generate", response_class=HTMLResponse)
+async def generate_lead_qr(
+    request: Request,
+    headline: str = Form("Kontakt aufnehmen"),
+    description: str = Form("Bitte Kontaktdaten eintragen."),
+    success_message: str = Form("Danke! Wir melden uns zeitnah."),
+    title: str = Form(""),
+    style: str = Form("modern"),
+    logo: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nicht eingeloggt")
+    slug = uuid.uuid4().hex[:10]
+    dynamic_url = _build_dynamic_url(request, slug)
+    logo_fs_path, logo_public_path = save_qr_logo(logo, slug, "lead_logo")
+
+    style_conf = get_qr_style(style)
+    result = generate_qr_png(
+        payload=dynamic_url,
+        size=600,
+        fg=style_conf["fg"],
+        bg=style_conf["bg"],
+        gradient=style_conf.get("gradient"),
+        frame_color=style_conf.get("frame_color"),
+        module_style=style_conf.get("module_style"),
+        eye_style=style_conf.get("eye_style"),
+        logo_path=logo_fs_path,
+    )
+    qr_bytes = result if isinstance(result, bytes) else result.get("bytes", b"")
+    qr_file = QR_DIR / f"lead_{slug}.png"
+    with open(qr_file, "wb") as f:
+        f.write(qr_bytes)
+
+    qr = QRCode(
+        user_id=user_id,
+        slug=slug,
+        type="lead",
+        dynamic_url=dynamic_url,
+        image_path=str(qr_file),
+        logo_path=logo_public_path,
+        style=style,
+        title=title or "Lead Formular",
+    )
+    qr.set_data(
+        {
+            "headline": headline,
+            "description": description,
+            "success_message": success_message,
+            "title": title,
+            "logo_path": logo_public_path,
+        }
+    )
+    db.add(qr)
+    db.commit()
+    db.refresh(qr)
+
+    qr_image = base64.b64encode(qr_bytes).decode("utf-8")
+    return templates.TemplateResponse(
+        "qr_lead_result.html",
+        {"request": request, "qr": qr, "qr_image": qr_image, "dynamic_url": dynamic_url},
+    )
+
+
+@router.get("/v/{slug}", response_class=HTMLResponse)
+def view_lead_page(request: Request, slug: str, db: Session = Depends(get_db)) -> HTMLResponse:
+    qr = db.query(QRCode).filter(QRCode.slug == slug, QRCode.type == "lead").first()
+    if not qr:
+        raise HTTPException(404, "Lead-QR nicht gefunden")
+    data = qr.get_data() or {}
+    return templates.TemplateResponse("qr_lead_view.html", {"request": request, "qr": qr, "data": data})
+
+
+@router.post("/submit/{slug}")
+def submit_lead(
+    request: Request,
+    slug: str,
+    name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+    message: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    qr = db.query(QRCode).filter(QRCode.slug == slug, QRCode.type == "lead").first()
+    if not qr:
+        raise HTTPException(404, "Lead-QR nicht gefunden")
+
+    lead = LeadCapture(
+        qr_id=qr.id,
+        name=name.strip() or None,
+        email=email.strip() or None,
+        phone=phone.strip() or None,
+        message=message.strip() or None,
+    )
+    db.add(lead)
+    db.commit()
+    return RedirectResponse(f"/qr/lead/v/{slug}?submitted=1", status_code=303)

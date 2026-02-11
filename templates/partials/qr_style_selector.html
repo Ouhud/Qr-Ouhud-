@@ -1,0 +1,486 @@
+{# templates/partials/qr_style_panel.html #}
+<section class="qr-style-panel" aria-labelledby="qr-style-panel-title">
+  <h2 id="qr-style-panel-title" class="qrsp-title">
+    🎨 QR-Design & Ausgabe
+  </h2>
+  <p class="qrsp-subtitle">
+    Wähle ein Design, passe Farben an, setze ein Logo und lege die Ausgabegröße fest.
+  </p>
+
+  <!-- Hidden: STYLE-Key für Backend -->
+  <input type="hidden" id="selected_style" name="style" value="{{ default_style|default('classic') }}">
+
+  <div class="qrsp-grid">
+    <!-- ========== Stil-Raster ========== -->
+    <div class="qrsp-card">
+      <h3 class="qrsp-card-title">Stile</h3>
+
+{% set styles = [
+  {"name":"Klassisch","key":"classic","img":"classic.png","desc":"Standard – kontrastreich und universell lesbar"},
+  {"name":"Abgerundet","key":"rounded","img":"rounded.png","desc":"Moderne, weiche Kanten"},
+  {"name":"Punkte","key":"dots","img":"dots.png","desc":"Kreatives Punktmuster"},
+  {"name":"Soft Modern","key":"soft","img":"soft.png","desc":"Minimal & elegant"},
+  {"name":"Gradient","key":"gradient","img":"gradient.png","desc":"Farbverlauf"},
+  {"name":"Premium","key":"premium","img":"premium.png","desc":"Luxuriöses Gold-Design"},
+  {"name":"Neon","key":"neon","img":"neon.png","desc":"Leuchtender Effekt"},
+  {"name":"Dark Mode","key":"dark","img":"dark.png","desc":"Perfekt für dunkle Hintergründe"},
+  {"name":"Sunset","key":"sunset","img":"sunset.png","desc":"Orange → Rot"},
+  {"name":"Ocean","key":"ocean","img":"ocean.png","desc":"Blauer Verlauf"},
+  {"name":"Forest","key":"forest","img":"forest.png","desc":"Natürliches Grün"},
+  {"name":"Rose Gold","key":"rose","img":"rose.png","desc":"Rosa & Gold"},
+  {"name":"3D Blau","key":"3d_pro","img":"3d_pro.png","desc":"Tiefer 3D-Metallglanz"},
+  {"name":"Metallisch","key":"metallic","img":"metallic.png","desc":"Stahl-Look"},
+  {"name":"Glas Effekt","key":"glass","img":"glass.png","desc":"Glas-Optik"},
+  {"name":"Futuristisch","key":"futuristic","img":"futuristic.png","desc":"Neonlinien"},
+  {"name":"Hologramm","key":"holo","img":"holo.png","desc":"Hologramm-Pastell"},
+  {"name":"Ouhud Brand","key":"ouhud","img":"ouhud.png","desc":"Ouhud Blue mit Glow"}
+] %}
+
+    <!-- === Style Grid === -->
+    <div class="style-grid">
+      {% for style in styles %}
+      <div class="style-card">
+        <div class="preview">
+          <img src="/static/style_previews/{{ style.img }}" alt="{{ style.name }}">
+        </div>
+        <h3>{{ style.name }}</h3>
+        <p class="desc">{{ style.desc }}</p>
+        <button type="button" class="btn primary style-btn" data-style="{{ style.key }}"
+                onclick="selectStyle(event, '{{ style.key }}')">Auswählen</button>
+      </div>
+      {% endfor %}
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- ✅ Professionelles Custom-Design Panel -->
+<section class="custom-design">
+  <div class="design-container">
+
+    <h2 class="section-title">
+      <span class="icon-gear">⚙️</span> Individuelles QR-Code-Design
+    </h2>
+
+    <p class="section-subtitle">
+      Gestalte deinen QR-Code nach deinen Vorstellungen – Farben, Logo und Größe perfekt auf deine Marke abgestimmt.
+    </p>
+
+    <div id="designForm">
+
+      <!-- GRID 2-spaltig -->
+      <div class="design-grid">
+
+              <div class="form-group">
+                <label>QR-Farbe (Vordergrund)</label>
+                <input type="color" id="fg_color" name="fg_color" value="#0d2a78" class="text-input"> 
+              </div>
+
+              <div class="form-group">
+                <label>Hintergrundfarbe</label>
+                <input type="color" id="bg_color" name="bg_color" value="#ffffff" class="text-input">
+              </div>
+
+              <div class="form-group">
+                <label>Größe px</label>
+                <input type="number" id="qr_size" name="qr_size" min="200" max="1000" value="300" class="input-field text-input">
+              </div>
+
+              {% if show_logo_upload|default(true) %}
+              <div class="form-group">
+                <label>Logo hochladen (optional)</label>
+                <input type="file" id="logo" name="logo" accept="image/*" class="input-file">
+              </div>
+              {% endif %}
+
+            </div>
+
+      <!-- BUTTONS -->
+      {% if include_submit|default(true) %}
+      <div class="action-buttons">
+        <button type="submit" class="btn primary">
+          {{ submit_label|default("✅ QR-Code erstellen") }}
+        </button>
+
+        {% if include_print|default(true) %}
+        <button type="button" class="btn gray" onclick="printQR()">
+          🖨️ Drucken
+        </button>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- ERWEITERTE OPTIONEN -->
+      <div class="extra-actions">
+        <h3>✨ Erweiterte Optionen</h3>
+        <p class="desc">
+          Aktiviere dynamische QR-Codes, die du später anpassen kannst – ohne neue Drucke.
+        </p>
+
+        <label class="toggle">
+          <input type="checkbox" id="dynamicQR" name="dynamicQR" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Dynamischer QR-Code aktivieren</span>
+        </label>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<style>
+:root {
+  --primary: #0d2a78;
+  --primary-dark: #0b1f5e;
+  --light: #f8fafc;
+  --text: #1e293b;
+  --muted: #64748b;
+}
+
+/* === Layout & Farben === */
+.qr-style-section {
+  background: var(--light);
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+.qr-style-section h1 {
+  color: var(--primary);
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: .5rem;
+}
+.qr-style-section .subtitle {
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+  font-size: 1rem;
+}
+
+/* === Style Grid === */
+.qr-style-panel .style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+  max-width: 950px;
+  margin: 0 auto;
+}
+
+/* ✅ EINHEITLICHE KARTENGRÖSSE */
+.qr-style-panel .style-card {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 2px 10px rgba(13, 42, 120, 0.08);
+  text-align: center;
+  transition: all 0.25s ease;
+
+  /* Wichtig */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 340px; /* gleiche Höhe für alle Karten */
+}
+.qr-style-panel .style-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(13, 42, 120, 0.15);
+}
+
+/* ✅ Einheitliche Bildhöhe */
+.qr-style-panel .style-card .preview img {
+  width: 100%;
+  height: 140px;
+  object-fit: contain;
+  border-radius: .6rem;
+  margin-bottom: .8rem;
+}
+
+/* ✅ Einheitliche Text-Höhen (Titel & Beschreibung) */
+.qr-style-panel .style-card h3 {
+  color: var(--primary);
+  font-weight: 600;
+  min-height: 28px; /* gleiche Höhe */
+}
+.qr-style-panel .style-card .desc {
+  color: #475569;
+  font-size: .9rem;
+  margin-bottom: 1rem;
+  min-height: 38px; /* gleiche Höhe */
+}
+
+/* ✅ Button immer unten */
+.qr-style-panel .style-card .btn {
+  margin-top: auto;
+}
+
+/* === Formular & Buttons === */
+.custom-design {
+  background: #fff;
+  border-radius: 1.4rem;
+  padding: 2.2rem 2.2rem 1.2rem;
+  max-width: 940px;
+  margin: 2rem auto 0.75rem;
+  box-shadow: 0 10px 35px rgba(13, 42, 120, 0.08);
+  text-align: center;
+}
+.custom-design:last-of-type {
+  margin-bottom: 0;
+}
+.custom-design .design-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.5rem;
+  text-align: left;
+  margin-bottom: 2rem;
+  align-items: start;
+}
+.custom-design .design-grid .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.custom-design .design-grid label {
+  display: block;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0;
+}
+.color-input,
+.text-input,
+.input-field,
+.input-file
+{
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: 56px;
+  height: 56px;               /* Einheitliche Höhe für alle Felder */
+  padding: 10px 12px;
+  border: 1.5px solid #c7d2fe;
+  border-radius: 10px;
+  background: #ffffff;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.color-input:focus,
+.input-file:focus,
+.text-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(13, 42, 120, 0.15);
+  outline: none;
+}
+
+
+/* Spezielle Anpassung für das Datei-Feld (Logo hochladen) */
+.input-file {
+  padding: 7px 10px;
+  line-height: normal;
+}
+.input-file::file-selector-button {
+  border: 1px solid #93c5fd;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-right: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.input-file::-webkit-file-upload-button {
+  border: 1px solid #93c5fd;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-right: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+input[type="color"].text-input {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 4px;
+  cursor: pointer;
+}
+
+/* Spezielle Anpassung für das Zahlenfeld (Größe) */
+.input-field {
+  padding: 0 12px;
+}
+
+
+/* === Buttons === */
+.custom-design .action-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+.custom-design .btn,
+.qr-style-panel .btn {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 320px;
+  height: 52px;
+  border-radius: 0.9rem;
+  font-weight: 600;
+  border: 2px solid var(--primary);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.custom-design .btn.primary,
+.qr-style-panel .btn.primary { 
+  background: var(--primary); 
+  color: #fff; 
+}
+.custom-design .btn.primary:hover,
+.qr-style-panel .btn.primary:hover { 
+  background: var(--primary-dark); 
+  transform: translateY(-2px); 
+}
+.qr-style-panel .style-btn.active {
+  background: var(--primary-dark);
+  color: #fff;
+}
+.custom-design .btn.edit,
+.custom-design .btn.secondary,
+.qr-style-panel .btn.edit,
+.qr-style-panel .btn.secondary { 
+  background: var(--primary); 
+  color: #fff; 
+}
+.custom-design .btn.edit:hover,
+.custom-design .btn.secondary:hover,
+.qr-style-panel .btn.edit:hover,
+.qr-style-panel .btn.secondary:hover { 
+  background: var(--primary-dark); 
+  color: #fff; 
+}
+
+.custom-design .extra-actions {
+  margin-top: 1.25rem;
+  margin-bottom: 0;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #f8fbff;
+  padding: 0.9rem;
+  text-align: left;
+}
+.custom-design .extra-actions h3 {
+  margin: 0 0 0.35rem;
+  color: #0d2a78;
+}
+.custom-design .extra-actions .desc {
+  margin: 0 0 0.8rem;
+  color: #475569;
+}
+.custom-design .toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.6rem;
+}
+.custom-design .toggle input {
+  position: absolute;
+  opacity: 0;
+}
+.custom-design .toggle-slider {
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  position: relative;
+  transition: background 0.2s ease;
+}
+.custom-design .toggle-slider::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 4px rgba(2, 6, 23, 0.25);
+}
+.custom-design .toggle input:checked + .toggle-slider {
+  background: #2563eb;
+}
+.custom-design .toggle input:checked + .toggle-slider::after {
+  transform: translateX(20px);
+}
+.custom-design .toggle-label {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+
+/* Zahl-Pfeile entfernen (Chrome, Edge, Safari) */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Zahl-Pfeile in Firefox entfernen */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Responsive */
+@media (max-width: 650px) {
+  .custom-design .design-grid { grid-template-columns: 1fr; }
+  .qr-style-panel .style-card { height: 350px; }
+  .custom-design .btn,
+  .qr-style-panel .btn { max-width: 100%; }
+  .custom-design {
+    padding: 1.4rem 1rem 0.9rem;
+    margin: 1.2rem auto 0.5rem;
+  }
+}
+</style>
+<script>
+if (!window.printQR) {
+  window.printQR = function () {
+    window.print();
+  };
+}
+
+if (!window.selectStyle) {
+  window.selectStyle = function (event, styleName) {
+    const hidden = document.getElementById("selected_style");
+    if (hidden) hidden.value = styleName;
+
+    const legacy = document.getElementById("selectedStyle");
+    if (legacy) legacy.value = styleName;
+
+    document.querySelectorAll(".style-btn").forEach((btn) => {
+      btn.classList.remove("active");
+      if (btn.dataset && btn.dataset.style) {
+        btn.textContent = "Auswählen";
+      }
+    });
+
+    const target =
+      (event && event.currentTarget) ||
+      document.querySelector(`.style-btn[data-style="${styleName}"]`);
+    if (target) {
+      target.classList.add("active");
+      target.textContent = "✅ Ausgewählt";
+    }
+  };
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const hidden = document.getElementById("selected_style");
+  if (hidden && hidden.value) {
+    const btn = document.querySelector(
+      `.style-btn[data-style="${hidden.value}"]`
+    );
+    if (btn && !btn.classList.contains("active")) {
+      btn.classList.add("active");
+      btn.textContent = "✅ Ausgewählt";
+    }
+  }
+});
+</script>

@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+{% block title %}💳 Abonnement & Rechnungen – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator billing-generator">
+
+  <!-- ✅ HEADER -->
+  <h1>💳 Abonnement & Rechnungen</h1>
+  <p class="subtitle">
+    Verwalte deinen Tarif, Zahlungen und deinen kompletten Rechnungsverlauf.
+  </p>
+
+  <!-- ✅ Status-Badge -->
+  {% if status == "Aktiv" %}
+    <div class="status-badge success"><i class="bi bi-check-circle-fill"></i> Aktiv</div>
+  {% elif status == "Gekündigt" %}
+    <div class="status-badge danger"><i class="bi bi-x-circle-fill"></i> Gekündigt</div>
+  {% else %}
+    <div class="status-badge warn"><i class="bi bi-hourglass-split"></i> In Bearbeitung</div>
+  {% endif %}
+
+  <!-- ✅ STRIPE FEEDBACK -->
+  {% if request.query_params.get('status') == 'success' %}
+    <div class="alert success">✅ Zahlung erfolgreich – dein Plan wurde aktualisiert.</div>
+  {% elif request.query_params.get('status') == 'cancelled' %}
+    <div class="alert error">❌ Zahlung abgebrochen.</div>
+  {% elif request.query_params.get('msg') == 'cancelled' %}
+    <div class="alert info">ℹ️ Dein Abonnement wurde beendet.</div>
+  {% endif %}
+
+  <!-- ✅ DEIN PLAN -->
+  <div class="qr-form">
+    <h2 class="form-title"><i class="bi bi-box-seam"></i> Dein aktueller Plan</h2>
+
+    <div class="plan-wrapper">
+      <div>
+        <h3 class="plan-name">{{ plan }}</h3>
+        <p class="plan-price">{{ price }}</p>
+
+        {% if trial_end %}
+        <p class="info-line highlight">
+          <i class="bi bi-gift-fill"></i> Kostenlos bis <strong>{{ trial_end }}</strong>
+        </p>
+        {% endif %}
+
+        <p class="info-line">
+          <i class="bi bi-calendar3"></i>
+          Nächste Abrechnung: <strong>{{ next_billing or "–" }}</strong>
+        </p>
+      </div>
+
+      <div class="btn-column">
+
+        {% if payment_required %}
+        <a class="btn-primary small w-full" href="/billing/pay-now">
+          <i class="bi bi-receipt"></i> Jetzt bezahlen
+        </a>
+        {% endif %}
+
+        {% if plan != "Enterprise" %}
+        <a class="btn-outline-success small w-full" href="/billing/upgrade/{{ plan|lower }}">
+          <i class="bi bi-chevron-double-up"></i> Upgrade / Downgrade
+        </a>
+        {% endif %}
+
+        {% if status == "Aktiv" %}
+        <a class="btn-outline-danger small w-full" href="/billing/cancel">
+          <i class="bi bi-x-circle"></i> Abo kündigen
+        </a>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ TARIFE (GRID 2×2) -->
+  <div class="qr-form">
+    <h2 class="form-title"><i class="bi bi-grid-3x3-gap"></i> Tarife</h2>
+    <p class="info-text">Wähle den Tarif, der zu deinem Projekt passt.</p>
+
+    <div class="tariff-grid">
+
+      <!-- BASIC -->
+      <div class="tariff-card {% if plan=='Basic' %}active{% endif %}">
+        <h3>Basic</h3>
+        <p class="price">4.99 €/Monat</p>
+        <ul>
+          <li>📦 Bis zu 10 QR-Codes</li>
+          <li>🎁 1 Monat kostenlos</li>
+          <li>🔒 Kein API-Zugang</li>
+        </ul>
+        <a href="/billing/upgrade/basic" class="btn-primary w-full small">Jetzt starten</a>
+      </div>
+
+      <!-- PRO -->
+      <div class="tariff-card {% if plan=='Pro' %}active{% endif %}">
+        <h3>Pro</h3>
+        <p class="price">14.99 €/Monat</p>
+        <ul>
+          <li>📦 Bis zu 50 QR-Codes</li>
+          <li>🎁 3 Monate kostenlos</li>
+          <li>🔒 Kein API-Zugang</li>
+        </ul>
+        <a href="/billing/upgrade/pro" class="btn-primary w-full small">Jetzt starten</a>
+      </div>
+
+      <!-- BUSINESS -->
+      <div class="tariff-card {% if plan=='Business' %}active{% endif %}">
+        <h3>Business</h3>
+        <p class="price">29.99 €/Monat</p>
+        <ul>
+          <li>📦 Bis zu 250 QR-Codes</li>
+          <li>🎁 6 Monate kostenlos</li>
+          <li>🔗 API-Zugang inklusive</li>
+        </ul>
+        <a href="/billing/upgrade/business" class="btn-primary w-full small">Jetzt starten</a>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div class="tariff-card">
+        <h3>Enterprise</h3>
+        <p class="price accent">Auf Anfrage</p>
+        <ul>
+          <li>📦 Bis zu 999999 QR-Codes</li>
+          <li>🔗 API-Zugang inklusive</li>
+        </ul>
+        <a href="/contact?topic=enterprise" class="btn-primary w-full small">Kontakt aufnehmen</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ✅ RECHNUNGEN -->
+  <div class="qr-form">
+    <h2 class="form-title"><i class="bi bi-receipt-cutoff"></i> Rechnungen</h2>
+
+    {% if invoices %}
+    <div class="overflow-x-auto">
+      <table class="billing-table">
+        <thead>
+          <tr>
+            <th>📅 Datum</th>
+            <th>🧾 Beschreibung</th>
+            <th>💶 Betrag</th>
+            <th>📌 Status</th>
+            <th>⬇️ PDF</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for inv in invoices %}
+          <tr>
+            <td>{{ inv.date }}</td>
+            <td>{{ inv.description }}</td>
+            <td>{{ inv.amount }}</td>
+            <td>
+              {% if inv.status == 'Bezahlt' %}
+              <span class="badge success">Bezahlt</span>
+              {% else %}
+              <span class="badge warn">Offen</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ inv.download_url }}" class="pdf-link">
+                <i class="bi bi-file-earmark-pdf-fill"></i>
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="info-text italic">Keine Rechnungen vorhanden.</p>
+    {% endif %}
+  </div>
+
+</section>
+
+
+<!-- ✅ STYLES — IDENTISCH MIT DEINEM SICHERHEITS & PDF STYLE -->
+
+<style>
+
+.qr-generator {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: .5rem;
+}
+
+.subtitle {
+  margin-bottom: 1.5rem;
+  color: #64748b;
+}
+
+.status-badge {
+  padding: .5rem .9rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.status-badge.success { background:#dcfce7; color:#15803d; }
+.status-badge.danger  { background:#fee2e2; color:#b91c1c; }
+.status-badge.warn    { background:#fef9c3; color:#854d0e; }
+
+.qr-form {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.6rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 3px 8px rgba(0,0,0,.05);
+}
+
+.form-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+}
+
+.plan-wrapper {
+  display:flex;
+  justify-content:space-between;
+  gap:1rem;
+}
+
+.plan-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.plan-price {
+  font-weight: 600;
+  margin-bottom:.6rem;
+}
+
+.btn-column a {
+  display:block;
+}
+
+.btn-primary {
+  background: var(--accent);
+  padding:.55rem 1rem;
+  color:#fff;
+  border-radius:10px;
+  text-align:center;
+  font-weight:600;
+}
+
+.btn-outline-success {
+  border:1px solid #16a34a;
+  padding:.55rem 1rem;
+  border-radius:10px;
+  color:#15803d;
+}
+
+.btn-outline-danger {
+  border:1px solid #dc2626;
+  padding:.55rem 1rem;
+  border-radius:10px;
+  color:#b91c1c;
+}
+
+.tariff-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1rem;
+}
+
+.tariff-card {
+  background:#fff;
+  border:1px solid #e2e8f0;
+  border-radius:16px;
+  padding:1.2rem;
+  box-shadow:0 6px 18px rgba(0,0,0,.06);
+}
+
+.tariff-card.active {
+  outline:3px solid rgba(37,99,235,.6);
+}
+
+.tariff-card h3 {
+  font-size:1.25rem;
+  font-weight:700;
+  text-align:center;
+  margin-bottom:.4rem;
+}
+
+.tariff-card .price {
+  font-size:1rem;
+  font-weight:700;
+  color:#1d4ed8;
+  text-align:center;
+  margin-bottom:.6rem;
+}
+
+.tariff-card ul li {
+  margin:.35rem 0;
+}
+
+.badge {
+  padding:.2rem .5rem;
+  border-radius:6px;
+  font-weight:700;
+  font-size:.8rem;
+}
+
+.badge.success { background:#dcfce7; color:#166534; }
+.badge.warn { background:#fef3c7; color:#92400e; }
+
+.billing-table th {
+  background:#f1f5f9;
+  font-weight:700;
+}
+
+.billing-table th,
+.billing-table td {
+  padding:.6rem;
+  border-bottom:1px solid #e5e7eb;
+}
+
+.pdf-link {
+  color:var(--accent);
+}
+
+</style>
+
+{% endblock %}

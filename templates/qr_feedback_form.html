@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Feedback/NPS QR{% endblock %}
+{% block content %}
+<section class="qr-generator">
+  <h1>📊 Feedback/NPS-QR</h1>
+  <form method="post" action="/qr/feedback/generate" enctype="multipart/form-data" class="qr-form">
+    <label>Frage</label><input type="text" name="question" value="Wie zufrieden sind Sie?">
+    <label>Label links</label><input type="text" name="low_label" value="Sehr unzufrieden">
+    <label>Label rechts</label><input type="text" name="high_label" value="Sehr zufrieden">
+    <label>Titel</label><input type="text" name="title">
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+{% endblock %}

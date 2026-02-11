@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}✅ Social QR erstellt{% endblock %}
+
+{% block content %}
+<section class="qr-result">
+  <h1>✅ QR-Code erstellt</h1>
+  <p class="subtitle">Scanne den Code, um dein Social-Profil zu öffnen.</p>
+
+  <div class="qr-preview-box">
+    <img src="data:image/png;base64,{{ qr_image }}" alt="QR-Code Vorschau" class="qr-preview">
+    <p><strong>{{ name }}</strong></p>
+    <a href="{{ dynamic_url }}" target="_blank" class="btn-link">🌐 Vorschau öffnen</a>
+    <a href="data:image/png;base64,{{ qr_image }}" download="social_qr.png" class="btn-link">⬇️ Herunterladen</a>
+  </div>
+</section>
+
+<style>
+.qr-result {
+  max-width:700px;margin:3rem auto;text-align:center;background:#fff;
+  padding:2rem;border-radius:16px;box-shadow:0 8px 25px rgba(0,0,0,0.08);
+}
+.qr-preview{max-width:260px;border-radius:12px;}
+.btn-link {
+  display:inline-block;
+  background:linear-gradient(135deg,#0D2A78,#1E40AF);
+  color:white;text-decoration:none;padding:0.8rem 1.2rem;
+  border-radius:10px;margin:0.4rem;font-weight:600;
+}
+</style>
+{% endblock %}

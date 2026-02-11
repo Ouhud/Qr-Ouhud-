@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dynamische QR-URL erstellen</h1>
+<form method="post" action="/qr/url/create">
+  <label>Titel:</label>
+  <input type="text" name="title" placeholder="Meine Website"><br>
+  <label>Ziel-URL:</label>
+  <input type="url" name="destination_url" placeholder="https://..." required><br>
+  <label>Notiz:</label>
+  <textarea name="note"></textarea><br>
+  <button type="submit">QR-Code erstellen</button>
+</form>
+{% endblock %}

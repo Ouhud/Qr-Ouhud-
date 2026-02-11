@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% block title %}✏️ QR-Code bearbeiten – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-editor">
+  <h1>✏️ QR-Code bearbeiten</h1>
+  <p class="subtitle">Der QR-Code bleibt gleich – du änderst nur Inhalt oder Design.</p>
+
+  {% if request.query_params.get("msg") == "ok" %}
+    <div class="alert success">✅ Änderungen erfolgreich gespeichert!</div>
+  {% endif %}
+
+  <form method="post" action="/qr/update/{{ qr.slug }}" enctype="multipart/form-data" class="qr-form">
+    
+    <!-- 🧾 Allgemeine Infos -->
+    <div class="section">
+      <label for="title">📝 Bezeichnung</label>
+      <input type="text" id="title" name="title" value="{{ qr.title or '' }}" required>
+    </div>
+
+    <!-- 🔗 Dynamische Eingabefelder nach Typ -->
+    {% if qr.type == 'url' %}
+      <div class="section">
+        <h3>🌐 Ziel-URL</h3>
+        <input type="url" id="url" name="url" value="{{ data.url or '' }}" placeholder="https://example.com" required>
+        <h4 style="margin-top:1rem;">UTM-Tracking</h4>
+        <input type="text" name="utm_source" value="{{ (data.utm or {}).source or '' }}" placeholder="utm_source">
+        <input type="text" name="utm_medium" value="{{ (data.utm or {}).medium or '' }}" placeholder="utm_medium">
+        <input type="text" name="utm_campaign" value="{{ (data.utm or {}).campaign or '' }}" placeholder="utm_campaign">
+        <input type="text" name="utm_term" value="{{ (data.utm or {}).term or '' }}" placeholder="utm_term">
+        <input type="text" name="utm_content" value="{{ (data.utm or {}).content or '' }}" placeholder="utm_content">
+        <h4 style="margin-top:1rem;">A/B-Ziel-URLs (JSON)</h4>
+        <textarea name="ab_targets_json" rows="4" placeholder='[{"url":"https://a.example","weight":50},{"url":"https://b.example","weight":50}]'>{{ data.ab_targets | tojson if data.ab_targets else '' }}</textarea>
+        <h4 style="margin-top:1rem;">Regeln Zeit/Land/Sprache/Geraet (JSON)</h4>
+        <textarea name="rules_json" rows="5" placeholder='[{"target_url":"https://de.example","countries":["DE"],"languages":["de"],"devices":["desktop"],"time_from":"08:00","time_to":"18:00"}]'>{{ data.rules | tojson if data.rules else '' }}</textarea>
+      </div>
+
+    {% elif qr.type == 'wifi' %}
+      <div class="section">
+        <h3>📶 WLAN-Zugangsdaten</h3>
+        <input type="text" id="ssid" name="ssid" value="{{ data.ssid or '' }}" placeholder="SSID">
+        <input type="text" id="password" name="password" value="{{ data.password or '' }}" placeholder="Passwort">
+        <select name="encryption" class="w-full border rounded-md px-3 py-2 mt-2">
+          <option value="WPA" {% if data.encryption == 'WPA' %}selected{% endif %}>WPA/WPA2</option>
+          <option value="WEP" {% if data.encryption == 'WEP' %}selected{% endif %}>WEP</option>
+          <option value="nopass" {% if data.encryption == 'nopass' %}selected{% endif %}>Keine Verschlüsselung</option>
+        </select>
+      </div>
+
+    {% elif qr.type == 'email' %}
+      <div class="section">
+        <h3>📧 E-Mail QR</h3>
+        <input type="email" id="email" name="email" value="{{ data.to or '' }}" placeholder="E-Mail-Adresse">
+        <input type="text" id="subject" name="subject" value="{{ data.subject or '' }}" placeholder="Betreff">
+        <textarea id="body" name="body" rows="3" placeholder="Nachrichtentext">{{ data.body or '' }}</textarea>
+      </div>
+
+    {% elif qr.type == 'sms' %}
+      <div class="section">
+        <h3>💬 SMS QR</h3>
+        <input type="text" id="phone" name="phone" value="{{ data.phone or '' }}" placeholder="Telefonnummer">
+        <textarea id="message" name="message" rows="3" placeholder="Nachrichtentext">{{ data.message or '' }}</textarea>
+      </div>
+
+    {% elif qr.type == 'tel' %}
+      <div class="section">
+        <h3>📞 Telefon QR</h3>
+        <input type="text" id="phone" name="phone" value="{{ data.phone or '' }}" placeholder="Telefonnummer">
+      </div>
+
+    {% elif qr.type == 'social' %}
+      <div class="section">
+        <h3>📱 Social Link Seite</h3>
+        <input type="text" id="social_name" name="name" value="{{ data.name or '' }}" placeholder="Name oder Profil-Titel">
+        <input type="text" id="social_title" name="title" value="{{ data.title or '' }}" placeholder="Interner Titel (optional)">
+        <input type="url" id="website" name="website" value="{{ data.website or '' }}" placeholder="Website">
+        <input type="url" id="facebook" name="facebook" value="{{ data.facebook or '' }}" placeholder="Facebook-Link">
+        <input type="url" id="instagram" name="instagram" value="{{ data.instagram or '' }}" placeholder="Instagram-Link">
+        <input type="url" id="whatsapp" name="whatsapp" value="{{ data.whatsapp or '' }}" placeholder="WhatsApp-Link">
+        <input type="url" id="linkedin" name="linkedin" value="{{ data.linkedin or '' }}" placeholder="LinkedIn-Profil">
+        <input type="url" id="xing" name="xing" value="{{ data.xing or '' }}" placeholder="Xing-Profil">
+        <input type="url" id="github" name="github" value="{{ data.github or '' }}" placeholder="GitHub-Profil">
+        <input type="url" id="tiktok" name="tiktok" value="{{ data.tiktok or '' }}" placeholder="TikTok-Link">
+        <input type="url" id="twitter" name="twitter" value="{{ data.twitter or '' }}" placeholder="X / Twitter-Link">
+      </div>
+
+    {% elif qr.type == 'geo' %}
+      <div class="section">
+        <h3>🗺️ Standort QR</h3>
+        <input type="text" id="lat" name="lat" value="{{ data.lat or '' }}" placeholder="Breitengrad">
+        <input type="text" id="lon" name="lon" value="{{ data.lon or '' }}" placeholder="Laengengrad">
+      </div>
+
+    {% elif qr.type == 'event' %}
+      <div class="section">
+        <h3>🗓️ Event QR</h3>
+        <input type="text" id="summary" name="summary" value="{{ data.summary or '' }}" placeholder="Titel">
+        <input type="text" id="dtstart" name="dtstart" value="{{ data.dtstart or '' }}" placeholder="Startzeit">
+        <input type="text" id="dtend" name="dtend" value="{{ data.dtend or '' }}" placeholder="Endzeit">
+        <input type="text" id="location" name="location" value="{{ data.location or '' }}" placeholder="Ort">
+        <textarea id="description" name="description" rows="3" placeholder="Beschreibung">{{ data.description or '' }}</textarea>
+      </div>
+
+    {% elif qr.type == 'payment' %}
+      <div class="section">
+        <h3>💳 Payment QR</h3>
+        <input type="url" id="payment_url" name="payment_url" value="{{ data.payment_url or '' }}" placeholder="https://...">
+      </div>
+
+    {% elif qr.type == 'product' %}
+      <div class="section">
+        <h3>🏷️ Produkt QR</h3>
+        <input type="text" id="name" name="name" value="{{ data.name or '' }}" placeholder="Produktname">
+        <input type="text" id="price" name="price" value="{{ data.price or '' }}" placeholder="Preis">
+        <input type="url" id="product_url" name="product_url" value="{{ data.product_url or '' }}" placeholder="https://...">
+      </div>
+
+    {% elif qr.type == 'multilink' %}
+      <div class="section">
+        <h3>🔗 Multi-Link QR</h3>
+        <textarea id="public_html" name="public_html" rows="6" placeholder="HTML-Inhalt">{{ data.public_html or '' }}</textarea>
+      </div>
+
+    {% elif qr.type == 'wallet' %}
+      <div class="section">
+        <h3>🎫 Wallet Pass QR</h3>
+        <input type="text" name="wallet_type" value="{{ data.wallet_type or '' }}" placeholder="Typ (ticket/loyalty/coupon)">
+        <input type="url" name="apple_pass_url" value="{{ data.apple_pass_url or '' }}" placeholder="Apple Wallet URL">
+        <input type="url" name="google_pass_url" value="{{ data.google_pass_url or '' }}" placeholder="Google Wallet URL">
+        <input type="url" name="pass_url" value="{{ data.pass_url or '' }}" placeholder="Fallback URL">
+      </div>
+
+    {% elif qr.type == 'gs1' %}
+      <div class="section">
+        <h3>🏷️ GS1 Digital Link</h3>
+        <input type="url" name="gs1_link" value="{{ data.gs1_link or '' }}" placeholder="https://.../01/GTIN/...">
+      </div>
+
+    {% elif qr.type == 'app_deeplink' %}
+      <div class="section">
+        <h3>📲 App Deep Link</h3>
+        <input type="url" name="deep_link" value="{{ data.deep_link or '' }}" placeholder="myapp://...">
+        <input type="url" name="ios_store_url" value="{{ data.ios_store_url or '' }}" placeholder="iOS Store URL">
+        <input type="url" name="android_store_url" value="{{ data.android_store_url or '' }}" placeholder="Android Store URL">
+        <input type="url" name="web_fallback_url" value="{{ data.web_fallback_url or '' }}" placeholder="Web Fallback URL">
+      </div>
+
+    {% elif qr.type == 'review' %}
+      <div class="section">
+        <h3>⭐ Bewertungs-QR</h3>
+        <input type="url" name="review_url" value="{{ data.review_url or '' }}" placeholder="Review URL">
+      </div>
+
+    {% elif qr.type == 'booking' %}
+      <div class="section">
+        <h3>📅 Terminbuchung-QR</h3>
+        <input type="url" name="booking_url" value="{{ data.booking_url or '' }}" placeholder="Booking URL">
+      </div>
+
+    {% elif qr.type == 'lead' %}
+      <div class="section">
+        <h3>🧾 Lead-Formular-QR</h3>
+        <input type="text" name="headline" value="{{ data.headline or '' }}" placeholder="Überschrift">
+        <textarea name="description" rows="3" placeholder="Beschreibung">{{ data.description or '' }}</textarea>
+        <input type="text" name="success_message" value="{{ data.success_message or '' }}" placeholder="Erfolgsmeldung">
+      </div>
+
+    {% elif qr.type == 'feedback' %}
+      <div class="section">
+        <h3>📊 Feedback/NPS-QR</h3>
+        <input type="text" name="question" value="{{ data.question or '' }}" placeholder="Frage">
+        <input type="text" name="low_label" value="{{ data.low_label or '' }}" placeholder="Label niedrig">
+        <input type="text" name="high_label" value="{{ data.high_label or '' }}" placeholder="Label hoch">
+      </div>
+
+    {% elif qr.type == 'coupon' %}
+      <div class="section">
+        <h3>🎟️ Gutschein-QR</h3>
+        <input type="text" name="code" value="{{ data.code or '' }}" placeholder="Code">
+        <input type="text" name="offer" value="{{ data.offer or '' }}" placeholder="Angebot">
+        <input type="datetime-local" name="expires_at" value="{{ data.expires_at or '' }}">
+        <input type="number" name="max_redemptions" value="{{ data.max_redemptions or 0 }}" placeholder="Max. Einlösungen">
+      </div>
+
+    {% elif qr.type == 'vcard' %}
+      <div class="section">
+        <h3>👤 vCard Informationen</h3>
+        <input type="text" id="first_name" name="first_name" value="{{ data.first_name or '' }}" placeholder="Vorname">
+        <input type="text" id="last_name" name="last_name" value="{{ data.last_name or '' }}" placeholder="Nachname">
+        <input type="text" id="phone" name="phone" value="{{ data.phone or '' }}" placeholder="Telefonnummer">
+        <input type="email" id="email" name="email" value="{{ data.email or '' }}" placeholder="E-Mail">
+        <input type="text" id="org" name="org" value="{{ data.org or '' }}" placeholder="Firma">
+        <input type="url" id="website" name="website" value="{{ data.website or '' }}" placeholder="Website">
+        <input type="url" id="apple_wallet_url" name="apple_wallet_url" value="{{ data.apple_wallet_url or '' }}" placeholder="Apple Wallet Pass URL">
+        <input type="url" id="google_wallet_url" name="google_wallet_url" value="{{ data.google_wallet_url or '' }}" placeholder="Google Wallet Pass URL">
+      </div>
+
+    {% else %}
+      <div class="section">
+        <h3>🧾 Inhalt</h3>
+        <textarea id="field1" name="field1" rows="3">{{ data.content or '' }}</textarea>
+      </div>
+    {% endif %}
+
+    <hr class="divider">
+
+    <!-- 🎨 Stil-Auswahl -->
+    <h3>🎨 Design & Stil</h3>
+    {% set include_submit = false %}
+    {% set include_print = false %}
+    {% set default_style = qr.style or "classic" %}
+    {% include "partials/qr_style_selector.html" %}
+
+    <!-- 🎨 Farbwahl, Logo, Größe -->
+    <div class="design-grid">
+      <div>
+        <label for="fg_color">Vordergrundfarbe:</label>
+        <input type="color" id="fg_color" name="color_fg" value="{{ qr.color_fg or '#000000' }}">
+      </div>
+      <div>
+        <label for="bg_color">Hintergrundfarbe:</label>
+        <input type="color" id="bg_color" name="color_bg" value="{{ qr.color_bg or '#FFFFFF' }}">
+      </div>
+      <div>
+        <label for="qr_size">📏 Größe:</label>
+        <input type="range" id="qr_size" name="qr_size" min="200" max="1000"
+               value="{{ qr.qr_size or 400 }}"
+               oninput="qrSizeValue.textContent=this.value + ' px'">
+        <output id="qrSizeValue">{{ qr.qr_size or 400 }} px</output>
+      </div>
+      <div>
+        <label for="logo">🏷️ Logo (optional):</label>
+        <input type="file" id="logo" name="logo" accept="image/*" onchange="previewLogo(event)">
+        <div id="logo-preview-container" {% if not qr.logo_path %}style="display:none;"{% endif %}>
+          <p>Aktuelles Logo:</p>
+          {% if qr.logo_path %}
+            {% set logo_src = qr.logo_path if qr.logo_path.startswith('/') else '/' + qr.logo_path %}
+            <img id="logo-preview" src="{{ logo_src }}" alt="Logo-Vorschau">
+          {% else %}
+            <img id="logo-preview" src="https://via.placeholder.com/150?text=Logo" alt="Logo-Vorschau">
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn full">💾 Änderungen speichern</button>
+    <a href="/d/{{ qr.slug }}" class="btn secondary" target="_blank" rel="noopener">👁️ Vorschau</a>
+  </form>
+
+  <!-- 📸 QR-Code Vorschau -->
+  <div class="qr-result">
+    <h3>📎 Aktueller QR-Code</h3>
+
+    {% if qr_image %}
+      <img src="{{ qr_image }}" alt="QR-Code" width="250" class="qr-preview">
+    {% elif qr and qr.image_path %}
+      <img src="/{{ qr.image_path }}" alt="QR-Code" width="250" class="qr-preview">
+    {% else %}
+      <img src="/static/default-qr.png" alt="QR-Code" width="250" class="qr-preview">
+    {% endif %}
+
+    <div style="margin-top:1rem;">
+      {% if qr and qr.image_path %}
+        <a href="/{{ qr.image_path }}" download class="btn primary">⬇️ Herunterladen</a>
+      {% endif %}
+      <button onclick="window.print()" class="btn secondary">🖨️ Drucken</button>
+    </div>
+  </div>
+</section>
+
+<!-- 🧾 STYLES -->
+<style>
+.qr-editor{max-width:900px;margin:3rem auto;padding:2.5rem;background:#fff;border-radius:20px;
+box-shadow:0 8px 30px rgba(13,42,120,0.08);font-family:"Inter",system-ui,sans-serif;}
+h1{text-align:center;color:#0d2a78;margin-bottom:.5rem;}
+.subtitle{text-align:center;color:#475569;margin-bottom:2rem;}
+.alert.success{background:#dcfce7;color:#15803d;padding:.8rem 1rem;border-radius:8px;margin-bottom:1rem;text-align:center;}
+label{font-weight:600;color:#0d2a78;display:block;margin-bottom:.4rem;}
+input,textarea,select{width:100%;padding:.7rem;border:1px solid #cbd5e1;border-radius:10px;
+font-size:1rem;background:#f9fafb;transition:.2s ease;}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.2);}
+.design-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;background:#f8f9fa;
+border-radius:12px;padding:1rem;margin-top:1rem;}
+.btn{display:inline-block;background:linear-gradient(135deg,#0d2a78,#2563eb);color:white;border:none;border-radius:10px;
+padding:.8rem 1.6rem;font-weight:600;text-decoration:none;cursor:pointer;margin-top:1rem;transition:.2s ease-in-out;}
+.btn:hover{transform:translateY(-2px);background:linear-gradient(135deg,#0b2163,#1e3a8a);}
+.btn.secondary{background:#2563eb;}
+.btn.full{display:block;width:100%;text-align:center;}
+.qr-result{margin-top:2rem;background:#f3f6ff;border-radius:16px;padding:1.5rem;text-align:center;
+box-shadow:0 4px 12px rgba(0,0,0,.05);}
+.qr-preview{max-width:250px;margin-top:1rem;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.1);}
+@media(max-width:600px){.qr-editor{padding:1.5rem;}.design-grid{grid-template-columns:1fr;}}
+</style>
+
+<!-- 🧾 SCRIPTS -->
+<script>
+function previewLogo(event){
+  const container=document.getElementById('logo-preview-container');
+  const img=document.getElementById('logo-preview');
+  const file=event.target.files[0];
+  if(file){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      img.src=e.target.result;
+      container.style.display='block';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+</script>
+{% endblock %}

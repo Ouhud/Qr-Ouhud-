@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}📊 Dashboard – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+  <h1 class="dashboard-title">📊 Dashboard</h1>
+  <p class="dashboard-subtitle">
+    Überblick über deine QR-Codes, Scans und Nutzeraktivität in Echtzeit.
+  </p>
+
+  <!-- === KPI-CARDS (OBEN) === -->
+  <div class="dashboard-cards">
+    <div class="card">
+      <h2>{{ total_qrcodes }}</h2>
+      <p>Gesamt-QR-Codes</p>
+    </div>
+    <div class="card">
+      <h2>{{ total_scans }}</h2>
+      <p>Gesamte Scans</p>
+    </div>
+    <div class="card">
+      <h2>{{ active_campaigns }}</h2>
+      <p>Aktive Kampagnen</p>
+    </div>
+    <div class="card">
+      <h2>{{ scans_today }}</h2>
+      <p>Neue Scans heute</p>
+    </div>
+  </div>
+
+  <!-- === CHARTS === -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>📈 Scans ({{ range_title }})</h3>
+        <div class="range-filter">
+          <a href="/dashboard/?range=7d" class="{% if range_key == '7d' %}active{% endif %}">7 Tage</a>
+          <a href="/dashboard/?range=30d" class="{% if range_key == '30d' %}active{% endif %}">30 Tage</a>
+          <a href="/dashboard/?range=6m" class="{% if range_key == '6m' %}active{% endif %}">6 Monate</a>
+        </div>
+      </div>
+      <canvas id="scansChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h3>📊 Verteilung der QR-Typen</h3>
+      <canvas id="typeChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h3>📱 Geräteverteilung</h3>
+      <canvas id="deviceChart"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h3>💼 QR-Code-Nutzung ({{ plan_name }})</h3>
+      <canvas id="usageChart"></canvas>
+    </div>
+  </div>
+
+  <!-- === LETZTE SCANS === -->
+  <div class="table-card">
+    <h3>🕓 Letzte Scans ({{ range_title }})</h3>
+    <table>
+      <thead>
+        <tr><th>Datum</th><th>Typ</th><th>Slug</th><th>Ort</th><th>Gerät</th></tr>
+      </thead>
+      <tbody>
+        {% for scan in recent_scans %}
+        <tr>
+          <td>{{ scan.date }}</td>
+          <td>{{ scan.type }}</td>
+          <td><code>{{ scan.slug }}</code></td>
+          <td>{{ scan.location }}</td>
+          <td>{{ scan.device }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">Keine Scans im gewählten Zeitraum vorhanden</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- === 📊 Chart.js === -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+/* === LINE CHART: Scans Zeitraum === */
+new Chart(document.getElementById("scansChart"), {
+  type: 'line',
+  data: {
+    labels: {{ (chart_labels or []) | tojson }},
+    datasets: [{
+      data: {{ (scans_per_period or []) | tojson }},
+      fill: true,
+      tension: 0.35,
+      borderColor: "#2563EB",
+      backgroundColor: "rgba(37,99,235,0.15)",
+      pointBackgroundColor: "#2563EB",
+      pointRadius: 4
+    }]
+  },
+  options: {
+    plugins:{ legend:{ display:false }},
+    scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+  }
+});
+
+/* === DOUGHNUT CHART: QR-Typen === */
+new Chart(document.getElementById("typeChart"), {
+  type: 'doughnut',
+  data: {
+    labels: {{ (qr_type_labels or []) | tojson }},
+    datasets: [{
+      data: {{ (qr_type_counts or []) | tojson }},
+      backgroundColor: [
+        "#2563EB","#0d2a78","#38bdf8","#10b981",
+        "#facc15","#f97316","#ef4444"
+      ],
+      borderWidth: 0
+    }]
+  },
+  options: { plugins:{ legend:{ position:"bottom" } } }
+});
+
+/* === PIE CHART: Geräte === */
+new Chart(document.getElementById("deviceChart"), {
+  type: 'pie',
+  data: {
+    labels: {{ (device_labels or []) | tojson }},
+    datasets: [{
+      data: {{ (device_counts or []) | tojson }},
+      backgroundColor: ["#2563EB","#10b981","#f59e0b","#94a3b8"],
+      borderWidth: 0
+    }]
+  },
+  options: { plugins:{ legend:{ position:"bottom" } } }
+});
+
+/* === PROGRESS CHART: QR-Limit Nutzung === */
+new Chart(document.getElementById("usageChart"), {
+  type: 'doughnut',
+  data: {
+    labels: ["Verwendet","Verfügbar"],
+    datasets: [{
+      data: [{{ qr_usage or 0 }}, {{ qr_remaining or 0 }}],
+      backgroundColor: ["#2563EB","#e2e8f0"],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    cutout: "70%",
+    plugins:{
+      legend:{ display:false },
+      tooltip:{ enabled:true }
+    }
+  }
+});
+</script>
+
+<!-- === STYLE SECTION === -->
+<style>
+:root {
+  --primary:#0d2a78;
+  --accent:#2563EB;
+  --bg:#f8f9fc;
+  --text:#1e293b;
+  --muted:#64748b;
+}
+
+/* === DASHBOARD === */
+.dashboard {
+  padding:2rem;
+  max-width:1200px;
+  margin:0 auto;
+  font-family:system-ui, sans-serif;
+}
+.dashboard-title {
+  font-size:1.9rem;
+  font-weight:700;
+  color:var(--primary);
+}
+.dashboard-subtitle {
+  color:var(--muted);
+  margin-bottom:2rem;
+}
+
+/* === KPI-CARDS === */
+.dashboard-cards {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:1rem;
+  margin-bottom:2rem;
+}
+.card {
+  background:#fff;
+  border-radius:1rem;
+  box-shadow:0 3px 10px rgba(0,0,0,0.05);
+  text-align:center;
+  padding:1.3rem;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.card:hover {
+  transform:translateY(-4px);
+  box-shadow:0 5px 18px rgba(13,42,120,0.15);
+}
+.card h2 {
+  font-size:2rem;
+  color:var(--primary);
+  margin:0;
+}
+.card p {
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+/* === CHART-GRID === */
+.chart-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1.5rem;
+  margin-bottom:2.5rem;
+}
+.chart-card {
+  background:#fff;
+  border-radius:1rem;
+  box-shadow:0 3px 10px rgba(0,0,0,0.05);
+  padding:1.2rem;
+}
+.chart-card h3 {
+  color:var(--primary);
+  font-size:1rem;
+  margin-bottom:.4rem;
+}
+.chart-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:.7rem;
+  margin-bottom:.8rem;
+}
+.range-filter {
+  display:flex;
+  align-items:center;
+  gap:.35rem;
+}
+.range-filter a {
+  text-decoration:none;
+  border:1px solid #cbd5e1;
+  padding:.25rem .55rem;
+  border-radius:999px;
+  font-size:.8rem;
+  color:#334155;
+  background:#fff;
+}
+.range-filter a.active {
+  border-color:#2563EB;
+  background:#eff6ff;
+  color:#1d4ed8;
+  font-weight:600;
+}
+
+/* === TABLE === */
+.table-card {
+  background:#fff;
+  border-radius:1rem;
+  box-shadow:0 3px 10px rgba(0,0,0,0.05);
+  padding:1.5rem;
+  overflow-x:auto;
+}
+.table-card h3 {
+  color:var(--primary);
+  font-size:1.1rem;
+  margin-bottom:1rem;
+}
+table {
+  width:100%;
+  border-collapse:collapse;
+  font-size:.95rem;
+}
+thead {
+  background:#f1f5f9;
+  color:#334155;
+}
+th,td {
+  padding:.8rem 1rem;
+  border-bottom:1px solid #e2e8f0;
+  text-align:left;
+}
+tbody tr:hover { background:#f9fafb; }
+
+/* === RESPONSIVE === */
+@media (max-width:768px) {
+  .dashboard { padding:1rem; }
+  .chart-grid { grid-template-columns:1fr; }
+  table { font-size:.85rem; }
+  .chart-header { flex-direction:column; align-items:flex-start; }
+}
+</style>
+{% endblock %}

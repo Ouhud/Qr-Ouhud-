@@ -1,0 +1,1076 @@
+{% extends "base.html" %}
+{% block title %}Ouhud QR – Dynamische QR-Codes für Teams{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="hero-inner">
+    <h1>Dynamische QR-Codes für <span>moderne B2B-Teams</span></h1>
+    <p class="hero-subtitle">
+      Mit <strong>Ouhud QR</strong> steuerst du QR-Codes zentral, sicher und messbar.
+      Ändere Inhalte jederzeit, ohne neu zu drucken. Ideal für Marketing, Retail, Events und Logistik.
+    </p>
+
+    <div class="hero-buttons">
+      <a href="/auth/register" class="btn primary">Kostenlos starten</a>
+      <a href="/auth/login" class="btn secondary">Anmelden</a>
+    </div>
+  </div>
+</section>
+
+<section class="trust">
+  <div class="container trust-inner">
+    <div class="trust-text">
+      <span class="badge">Enterprise Ready</span>
+      <h2>Ein System für Teams, Prozesse und Skalierung</h2>
+      <p>
+        Zentrale Verwaltung, Rollen & Rechte, Audit-Logs und konsistente Markenführung.
+        Ouhud QR ist für produktive Workflows gebaut.
+      </p>
+    </div>
+    <div class="trust-stats">
+      <div class="stat-card">
+        <span class="stat-number">99,9%</span>
+        <span class="stat-label">Uptime SLA</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">5 min</span>
+        <span class="stat-label">Onboarding</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">24/7</span>
+        <span class="stat-label">Monitoring</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="workflow">
+  <div class="container">
+    <div class="section-header">
+      <span class="badge">Workflow</span>
+      <h2>In 3 Schritten live</h2>
+      <p>Von der Idee bis zum Einsatz in Minuten.</p>
+    </div>
+    <div class="workflow-grid">
+      <div class="workflow-card">
+        <span class="step">01</span>
+        <h3>Code erstellen</h3>
+        <p>Wähle Typ, Ziel und Laufzeit. Optional mit Branding.</p>
+      </div>
+      <div class="workflow-card">
+        <span class="step">02</span>
+        <h3>Veröffentlichen</h3>
+        <p>Nutze Print, Packaging oder Digital Signage.</p>
+      </div>
+      <div class="workflow-card">
+        <span class="step">03</span>
+        <h3>Analysieren</h3>
+        <p>Scans, Regionen und Geräte in Echtzeit.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <span class="badge">Preise</span>
+      <h2>Flexible Tarife für jedes Projekt</h2>
+      <p>Transparent. Skalierbar. Keine versteckten Gebühren.</p>
+    </div>
+
+    <div class="pricing-grid">
+      {% for plan in plans %}
+      <div class="plan-card {% if plan.name == 'Business' %}highlight{% endif %}">
+        {% if plan.name == 'Business' %}<div class="popular-badge">Empfehlung</div>{% endif %}
+        <div class="plan-header">
+          <h3>{{ plan.name }}</h3>
+          <div class="price">
+            {% if plan.price > 0 %}
+              <span class="currency">€</span><span class="amount">{{ "%.2f"|format(plan.price) }}</span><span class="period">/Monat</span>
+            {% else %}
+              <span class="amount">Individuell</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <ul class="plan-features">
+          <li><i class="feature-icon">✔</i> Bis zu <strong>{{ plan.qr_limit }}</strong> QR-Codes</li>
+          {% if plan.free_months > 0 %}
+          <li><i class="feature-icon">🎁</i> {{ plan.free_months }} Monat(e) gratis</li>
+          {% endif %}
+          <li>
+            {% if plan.has_api_access %}
+              <i class="feature-icon">✔</i> Voller API-Zugang
+            {% else %}
+              <i class="feature-icon">✕</i> Kein API-Zugang
+            {% endif %}
+          </li>
+        </ul>
+
+        <a href="/auth/register" class="btn plan-btn">Jetzt wählen</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="qr-types">
+  <div class="container">
+    <div class="section-header">
+      <span class="badge">Features</span>
+      <h2>Vielseitige QR-Code Typen</h2>
+      <p>Mehr als 20 Typen für Marketing, Sales, Operations und Support.</p>
+    </div>
+
+    <div class="qr-type-grid">
+      {% set types = [
+        {"icon":"🌐","title":"URL","desc":"Dynamischer Link auf jede Webseite."},
+        {"icon":"👤","title":"vCard","desc":"Digitale Kontaktkarte zum Speichern."},
+        {"icon":"📄","title":"PDF","desc":"Dokumente direkt teilen."},
+        {"icon":"📶","title":"WLAN","desc":"WiFi-Zugang ohne Tippen."},
+        {"icon":"✉️","title":"E-Mail","desc":"Vorgefertigte Mail mit Betreff/Inhalt."},
+        {"icon":"💬","title":"SMS","desc":"SMS mit Nummer und Nachricht."},
+        {"icon":"📞","title":"Telefon","desc":"Anruf per Scan starten."},
+        {"icon":"📱","title":"Social Media","desc":"Profile und Kanäle bündeln."},
+        {"icon":"🕓","title":"Event / Termin","desc":"Termine als Kalender-QR."},
+        {"icon":"🗺️","title":"Standort / Geo","desc":"Standort auf Maps öffnen."},
+        {"icon":"💰","title":"Payment / Bezahlung","desc":"Direkt zur Zahlung leiten."},
+        {"icon":"🧾","title":"Multi-Link / Bio-Link","desc":"Mehrere Links auf einer Seite."},
+        {"icon":"🏷️","title":"Produkt / Artikel","desc":"Produktinfos und Shop-Links."},
+        {"icon":"🎫","title":"Wallet Pass","desc":"Apple/Google Wallet Pass öffnen."},
+        {"icon":"🏷️","title":"GS1 Digital Link","desc":"Retail- und Verpackungs-QR nach GS1."},
+        {"icon":"📲","title":"App Deep Link","desc":"In App öffnen mit Store-Fallback."},
+        {"icon":"⭐","title":"Bewertungs-QR","desc":"Google/Trustpilot Bewertungen sammeln."},
+        {"icon":"📅","title":"Terminbuchung","desc":"Direkt zur Buchungsseite."},
+        {"icon":"🧾","title":"Lead Formular","desc":"Leads und Anfragen erfassen."},
+        {"icon":"📊","title":"Feedback / NPS","desc":"Kundenzufriedenheit messbar machen."},
+        {"icon":"🎟️","title":"Gutschein / Coupon","desc":"Coupons mit Ablauf und Tracking."}
+      ] %}
+      {% for t in types %}
+      <div class="qr-type-card">
+        <div class="type-icon">{{ t.icon }}</div>
+        <h3>{{ t.title }}</h3>
+        <p>{{ t.desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="qr-styles">
+  <div class="container">
+    <div class="section-header">
+      <h2>Dein Design, dein Brand</h2>
+      <p>Alle Styles auf einen Blick. Wähle Presets, Farben, Formen und Brand-Kits.</p>
+    </div>
+
+    <div class="style-gallery">
+      {% set styles = [
+        {"file":"ouhud.png","label":"Ouhud","tag":"Brand-Kit"},
+        {"file":"classic.png","label":"Classic","tag":"Standard"},
+        {"file":"rounded.png","label":"Rounded","tag":"Formen"},
+        {"file":"dots.png","label":"Dots","tag":"Formen"},
+        {"file":"gradient.png","label":"Gradient","tag":"Farben"},
+        {"file":"dark.png","label":"Dark","tag":"Themes"},
+        {"file":"soft.png","label":"Soft","tag":"Themes"},
+        {"file":"neon.png","label":"Neon","tag":"Themes"},
+        {"file":"glass.png","label":"Glass","tag":"Premium"},
+        {"file":"metallic.png","label":"Metallic","tag":"Premium"},
+        {"file":"holo.png","label":"Holo","tag":"Premium"},
+        {"file":"3d_pro.png","label":"3D Pro","tag":"Premium"},
+        {"file":"forest.png","label":"Forest","tag":"Farben"},
+        {"file":"ocean.png","label":"Ocean","tag":"Farben"},
+        {"file":"sunset.png","label":"Sunset","tag":"Farben"},
+        {"file":"rose.png","label":"Rose","tag":"Farben"},
+        {"file":"futuristic.png","label":"Futuristic","tag":"Pro"},
+        {"file":"premium.png","label":"Premium","tag":"Pro"}
+      ] %}
+      {% for s in styles %}
+      <div class="style-card">
+        <span class="style-tag">{{ s.tag }}</span>
+        <div class="img-wrapper">
+          <img src="/static/style_previews/{{ s.file }}" alt="{{ s.label }}">
+        </div>
+        <span>{{ s.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="insights">
+  <div class="container insights-inner">
+    <div class="insights-content">
+      <span class="badge">Analytics</span>
+      <h2>Entscheidungen auf Datenbasis</h2>
+      <p>
+        Echtzeit-Tracking für Kampagnen, Standorte und Teams. Exportiere Reports oder
+        integriere Daten direkt in deine BI-Tools.
+      </p>
+      <ul class="insights-list">
+        <li>Live-Heatmaps und Geräte-Insights</li>
+        <li>CSV, Webhooks und API-Zugriff</li>
+        <li>Mehrsprachige Dashboards</li>
+      </ul>
+    </div>
+    <div class="insights-panel">
+      <div class="metric">
+        <span class="metric-title">Scans heute</span>
+        <span class="metric-value">12.840</span>
+        <span class="metric-note">+18% vs. gestern</span>
+      </div>
+      <div class="metric">
+        <span class="metric-title">Top Region</span>
+        <span class="metric-value">DACH</span>
+        <span class="metric-note">Stärkster Kanal</span>
+      </div>
+      <div class="metric">
+        <span class="metric-title">Conversion</span>
+        <span class="metric-value">6,4%</span>
+        <span class="metric-note">Zielseite / Kampagne</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="integrations">
+  <div class="container">
+    <div class="section-header">
+      <span class="badge">Integrationen</span>
+      <h2>Passt in deinen Stack</h2>
+      <p>Einfach integrieren in CRM, CMS und Automationen.</p>
+    </div>
+    <div class="integration-grid">
+      <div class="integration-card">HubSpot</div>
+      <div class="integration-card">Salesforce</div>
+      <div class="integration-card">Zapier</div>
+      <div class="integration-card">Shopify</div>
+      <div class="integration-card">WordPress</div>
+      <div class="integration-card">Slack</div>
+    </div>
+  </div>
+</section>
+
+<section class="security">
+  <div class="container security-inner">
+    <div class="security-text">
+      <span class="badge">Security</span>
+      <h2>Compliance, die B2B braucht</h2>
+      <p>
+        DSGVO-konform, rollenbasiert und mit Audit-Logs. Optional SSO und
+        individuelle Datenhaltung.
+      </p>
+    </div>
+    <div class="security-list">
+      <div class="security-item">Rollen & Rechte für Teams</div>
+      <div class="security-item">Audit-Logs und Änderungsverlauf</div>
+      <div class="security-item">SSO / SAML auf Anfrage</div>
+      <div class="security-item">Individuelle Subdomains</div>
+    </div>
+  </div>
+</section>
+
+<section class="testimonials">
+  <div class="container">
+    <div class="section-header">
+      <span class="badge">Kundenstimmen</span>
+      <h2>Teams, die skalieren</h2>
+      <p>Verlässliche QR-Infrastruktur für wachsende Unternehmen.</p>
+    </div>
+    <div class="testimonial-grid">
+      <div class="testimonial-card">
+        <p>„Wir aktualisieren Kampagnen ohne neue Druckkosten. Die Time-to-Market ist extrem schnell.“</p>
+        <span class="testimonial-author">Leitung Marketing, Retail DACH</span>
+      </div>
+      <div class="testimonial-card">
+        <p>„Die API-Integration in unser CRM war in einem Tag erledigt.“</p>
+        <span class="testimonial-author">Operations, SaaS Plattform</span>
+      </div>
+      <div class="testimonial-card">
+        <p>„Audit-Logs und Team-Rechte geben uns die Kontrolle, die wir brauchen.“</p>
+        <span class="testimonial-author">IT Security, Logistikgruppe</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-header">
+      <span class="badge">FAQ</span>
+      <h2>Häufige Fragen</h2>
+      <p>Schnell geklärt, bevor du startest.</p>
+    </div>
+    <div class="faq-grid">
+      <div class="faq-card">
+        <h3>Kann ich den Inhalt nach dem Druck ändern?</h3>
+        <p>Ja. Bei dynamischen QR-Codes bleibt der QR gleich, während Ziel und Inhalte jederzeit aktualisiert werden können.</p>
+      </div>
+      <div class="faq-card">
+        <h3>Welche QR-Typen werden unterstützt?</h3>
+        <p>URL, vCard, PDF, WLAN, E-Mail, SMS, Telefon, Social, Event, Standort, Payment, Multi-Link, Produkt sowie Wallet, GS1, App Deep Link, Review, Booking, Lead, Feedback und Coupon.</p>
+      </div>
+      <div class="faq-card">
+        <h3>Gibt es Team-Rollen und Freigaben?</h3>
+        <p>Ja. Mit Workspaces und Freigaben arbeiten Teams mit Rollen wie Admin, Editor und Viewer auf denselben QR-Ressourcen.</p>
+      </div>
+      <div class="faq-card">
+        <h3>Kann ich eine API mit anderer Software verbinden?</h3>
+        <p>Ja. Über API-Schlüssel im Bereich Sicherheit kannst du externe Systeme anbinden und QR-Codes per API erstellen, lesen, aktualisieren und löschen.</p>
+      </div>
+      <div class="faq-card">
+        <h3>Wie sicher sind API-Schlüssel?</h3>
+        <p>Neue Schlüssel werden nur einmal vollständig angezeigt. Danach siehst du nur maskierte Werte. Schlüssel können benannt, umbenannt und jederzeit gelöscht werden.</p>
+      </div>
+      <div class="faq-card">
+        <h3>Ist Ouhud QR DSGVO-konform?</h3>
+        <p>Ja. Die Datenverarbeitung ist in den rechtlichen Seiten dokumentiert. Datenschutz- und Impressumsseiten sind direkt verfügbar.</p>
+      </div>
+      <div class="faq-card">
+        <h3>Wie läuft die Bezahlung?</h3>
+        <p>Die Zahlungsabwicklung erfolgt über Stripe. Zahlungsdaten werden nicht vollständig auf unseren Servern gespeichert.</p>
+      </div>
+      <div class="faq-card">
+        <h3>Wo sehe ich Scans und Performance?</h3>
+        <p>Im Dashboard mit Zeiträumen (7 Tage, 30 Tage, 6 Monate), Scan-Verlauf, Typ-Verteilung und Geräteverteilung.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="container cta-inner">
+    <div class="cta-text">
+      <h2>Bereit für professionelle QR-Infrastruktur?</h2>
+      <p>Starte in Minuten oder sprich mit unserem Team.</p>
+    </div>
+    <div class="cta-actions">
+      <a href="/auth/register" class="btn primary">Kostenlos starten</a>
+      <a href="/kontakt" class="btn ghost">Demo anfragen</a>
+    </div>
+  </div>
+</section>
+
+<footer class="crm-footer">
+  <div class="footer-wrap">
+    <div class="footer-left">
+      <img class="footer-logo" src="/static/logo.png" alt="Ouhud Logo" onerror="this.onerror=null;this.src='/static/default-avatar.png';" />
+
+      <div class="footer-links">
+        <span class="footer-copy">
+          © <script>document.write(new Date().getFullYear())</script>
+          Ouhud GmbH — Alle Rechte vorbehalten.
+        </span>
+
+        <a href="/impressum">Impressum</a>
+        <a href="/datenschutz">Datenschutz</a>
+        <a href="/faq">FAQ</a>
+      </div>
+    </div>
+
+    <div class="footer-right">
+      <a class="icon" href="mailto:info@ouhud.com" aria-label="E-Mail"><i class="fas fa-envelope" aria-hidden="true"></i></a>
+      <a class="icon" href="https://github.com/ouhud" target="_blank" rel="noopener" aria-label="GitHub"><i class="fab fa-github" aria-hidden="true"></i></a>
+      <a class="icon" href="https://www.linkedin.com/company/ouhud-gmbh/" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="fab fa-linkedin-in" aria-hidden="true"></i></a>
+      <a class="icon" href="https://facebook.com/ouhudgmbh" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f" aria-hidden="true"></i></a>
+      <a class="icon" href="https://instagram.com/ouhud_gmbh" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+    </div>
+  </div>
+</footer>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
+
+:root {
+  --primary: #0b1f4b;
+  --accent: #1d4ed8;
+  --accent-strong: #0ea5e9;
+  --accent-light: #e0f2fe;
+  --light: #f7fafc;
+  --white: #ffffff;
+  --text: #0f172a;
+  --muted: #475569;
+  --surface: #f1f5f9;
+  --shadow: 0 18px 30px -20px rgba(15, 23, 42, 0.45);
+  --radius: 1rem;
+}
+
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: var(--light);
+  color: var(--text);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.container, .footer-inner, .hero-inner {
+  position: relative;
+  z-index: 1;
+}
+
+h1, h2, h3 {
+  font-family: 'Sora', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.container {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+.section-header h2 {
+  font-size: 2.2rem;
+  color: var(--primary);
+  font-weight: 800;
+  margin-top: 0.5rem;
+}
+
+.badge {
+  background: var(--accent-light);
+  color: var(--accent);
+  padding: 0.3rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* === HERO === */
+.hero {
+  background:
+    radial-gradient(980px 360px at 15% -8%, rgba(96, 165, 250, 0.2), transparent 58%),
+    radial-gradient(900px 360px at 85% 0%, rgba(37, 99, 235, 0.16), transparent 56%),
+    linear-gradient(145deg, #0a1b48 0%, #0a245d 44%, #071633 100%);
+  color: white;
+  padding: 7.2rem 1.5rem 3.2rem;
+  margin: -2rem -2rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0)),
+    repeating-linear-gradient(
+      120deg,
+      rgba(255,255,255,0.03) 0 1px,
+      transparent 1px 24px
+    );
+  opacity: 0.55;
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.hero-brand-wrapper {
+  margin-bottom: 2rem;
+}
+
+.hero-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.65rem 1rem 0.65rem 0.75rem;
+  border-radius: 1rem;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 28px rgba(3, 8, 25, 0.28);
+}
+
+.hero-logo img {
+  height: 34px;
+  width: 34px;
+  border-radius: 0.55rem;
+  box-shadow: 0 5px 16px rgba(2, 6, 23, 0.3);
+}
+
+.hero-logo-text {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.hero-logo-text strong {
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.hero-logo-text small {
+  color: #bfdbfe;
+  font-size: 0.72rem;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 1.5rem;
+}
+
+.hero h1 span { color: #7dd3fc; }
+
+.hero-subtitle {
+  font-size: 1.2rem;
+  max-width: 720px;
+  margin: 0 auto 2.5rem;
+  color: #dbeafe;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.15);
+}
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.9rem 2rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  transition: 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn.primary { background: var(--white); color: var(--primary); }
+.btn.primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+
+.btn.secondary { border: 1px solid rgba(255,255,255,0.4); color: white; }
+.btn.secondary:hover { background: rgba(255,255,255,0.1); }
+
+.btn.ghost {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: transparent;
+}
+
+.btn.ghost:hover { background: var(--accent-light); }
+
+.hero-qr-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  background: rgba(255,255,255,0.06);
+  padding: 1rem 1rem 1.2rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255,255,255,0.16);
+  box-shadow: 0 12px 36px rgba(2, 6, 23, 0.35);
+}
+
+.qr-label {
+  font-size: 0.73rem;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #bfdbfe;
+  font-weight: 700;
+}
+
+.qr-frame {
+  background: white;
+  padding: 0.8rem;
+  border-radius: 0.9rem;
+  display: inline-block;
+}
+
+.qr-frame img {
+  width: 158px;
+  height: 158px;
+  display: block;
+  border-radius: 0.45rem;
+}
+
+.qr-caption {
+  display: block;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  letter-spacing: 0.15px;
+}
+
+/* === TRUST === */
+.trust {
+  margin-top: -2.2rem;
+  padding: 4rem 0 6rem;
+}
+
+.trust-inner {
+  background: var(--white);
+  border-radius: 1.35rem;
+  padding: 3rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 2rem;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+}
+
+.trust-text h2 { margin: 0.6rem 0 1rem; color: var(--primary); }
+
+.trust-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--primary);
+  display: block;
+}
+
+.stat-label { font-size: 0.9rem; color: var(--muted); }
+
+/* === WORKFLOW === */
+.workflow { padding: 6rem 0; }
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.workflow-card {
+  background: var(--white);
+  padding: 2rem;
+  border-radius: 1.2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid #e2e8f0;
+}
+
+.workflow-card .step {
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* === PRICING === */
+.pricing { padding: 8rem 0; }
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.plan-card {
+  background: var(--white);
+  padding: 3rem 2rem;
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #f1f5f9;
+}
+
+.plan-card.highlight {
+  border: 2px solid var(--accent);
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+.popular-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: white;
+  padding: 0.3rem 1.2rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.plan-header h3 { font-size: 1.5rem; margin-bottom: 1rem; color: var(--primary); }
+
+.price .amount { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
+.price .currency { font-size: 1.2rem; font-weight: 700; vertical-align: top; }
+.price .period { color: var(--muted); font-size: 0.9rem; }
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0 3rem;
+  flex-grow: 1;
+}
+
+.plan-features li {
+  margin-bottom: 0.8rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.feature-icon { color: var(--accent); font-style: normal; font-weight: bold; }
+
+.plan-btn {
+  background: var(--primary);
+  color: white;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.plan-btn:hover { background: var(--accent); }
+
+/* === QR TYPES GRID === */
+.qr-types { padding: 8rem 0; background: var(--white); }
+
+.qr-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.qr-type-card {
+  padding: 2rem;
+  border-radius: 1rem;
+  background: var(--light);
+  transition: 0.3s;
+  text-align: left;
+}
+
+.qr-type-card:hover { background: var(--accent-light); transform: translateY(-5px); }
+
+.type-icon { font-size: 2rem; margin-bottom: 1rem; }
+
+.qr-type-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--primary); }
+
+.qr-type-card p { font-size: 0.85rem; color: var(--muted); margin: 0; }
+
+/* === STYLES === */
+.qr-styles { padding: 8rem 0; }
+
+.style-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+}
+
+.style-card {
+  background: white;
+  padding: 1.2rem;
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+  position: relative;
+  border: 1px solid #e2e8f0;
+}
+
+.style-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.img-wrapper img { width: 100%; border-radius: 0.6rem; }
+
+.style-card span { display: block; margin-top: 0.8rem; font-weight: 600; font-size: 0.9rem; }
+
+/* === INSIGHTS === */
+.insights {
+  padding: 8rem 0;
+  background: linear-gradient(120deg, #f8fafc, #e2e8f0);
+}
+
+.insights-inner {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.insights-list {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+}
+
+.insights-list li {
+  padding: 0.4rem 0;
+}
+
+.insights-panel {
+  background: var(--white);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.metric {
+  padding: 1rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.metric:last-child { border-bottom: none; }
+
+.metric-title { display: block; font-size: 0.85rem; color: var(--muted); }
+.metric-value { display: block; font-size: 2rem; font-weight: 800; color: var(--primary); }
+.metric-note { font-size: 0.85rem; color: var(--muted); }
+
+/* === INTEGRATIONS === */
+.integrations { padding: 7rem 0; }
+
+.integration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.integration-card {
+  background: var(--white);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  padding: 1.2rem;
+  text-align: center;
+  font-weight: 600;
+  color: var(--primary);
+  box-shadow: var(--shadow);
+}
+
+/* === SECURITY === */
+.security {
+  padding: 7rem 0;
+  background: var(--white);
+}
+
+.security-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.security-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.security-item {
+  padding: 1.2rem;
+  border-radius: 1rem;
+  background: var(--surface);
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* === TESTIMONIALS === */
+.testimonials { padding: 7rem 0; }
+
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.testimonial-card {
+  background: var(--white);
+  border-radius: 1.2rem;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid #e2e8f0;
+}
+
+.testimonial-author {
+  display: block;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* === FAQ === */
+.faq { padding: 7rem 0; background: var(--white); }
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.faq-card {
+  background: var(--surface);
+  padding: 1.8rem;
+  border-radius: 1.2rem;
+}
+
+/* === CTA === */
+.cta {
+  padding: 4.5rem 1.5rem;
+  margin: 0 -2rem;
+  background: linear-gradient(145deg, #0a1b48 0%, #0a245d 44%, #071633 100%);
+  color: #fff;
+}
+
+.cta-inner {
+  background: transparent;
+  color: white;
+  border-radius: 0;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  box-shadow: none;
+}
+
+.cta-text h2 {
+  margin: 0 0 .45rem;
+  color: #fff;
+}
+
+.cta-text p {
+  margin: 0;
+  color: #dbeafe;
+}
+
+.cta-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+/* === FOOTER === */
+.crm-footer {
+  background: linear-gradient(145deg, #0a1b48 0%, #0a245d 44%, #071633 100%);
+  color: #e2e8f0;
+  margin: -1px -2rem 0;
+  padding: 1.35rem 1.2rem 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.footer-wrap {
+  max-width: 1160px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.footer-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.footer-copy {
+  color: #cbd5e1;
+  font-size: .95rem;
+}
+
+.footer-links a {
+  color: #dbeafe;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: .95rem;
+}
+
+.footer-links a:hover {
+  color: #fff;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+}
+
+.footer-right .icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #dbeafe;
+  border: 1px solid rgba(219, 234, 254, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  transition: all .2s ease;
+}
+
+.footer-right .icon:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+@media (max-width: 768px) {
+  .footer-wrap { flex-direction: column; align-items: flex-start; }
+  .footer-left { flex-direction: column; align-items: flex-start; }
+  .footer-links { flex-direction: column; align-items: flex-start; gap: .45rem; }
+  .plan-card.highlight { transform: none; }
+  .hero { padding-top: 6rem; }
+  .trust-inner { grid-template-columns: 1fr; }
+  .trust-stats { grid-template-columns: 1fr; }
+  .insights-inner { grid-template-columns: 1fr; }
+  .security-inner { grid-template-columns: 1fr; }
+  .cta { margin: 0 -2rem; padding: 3.4rem 1.2rem 2.2rem; }
+  .cta-inner { flex-direction: column; text-align: center; }
+  .crm-footer { margin: -1px -2rem 0; padding: 1.2rem; }
+}
+
+/* Entfernt den weißen Rest unter dem Footer nur auf der Startseite */
+.guest-content {
+  padding-bottom: 0 !important;
+}
+</style>
+
+{% endblock %}

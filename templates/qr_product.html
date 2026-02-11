@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}🛍️ Produkt-QR-Code – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator">
+  <div class="container text-center">
+    <h1>🛍️ Produkt-QR-Code Generator</h1>
+    <p class="subtitle">
+      Erstelle einen QR-Code, der alle wichtigen Produktinformationen enthält – ideal für Online-Shops, Etiketten oder Kataloge.
+    </p>
+
+<form method="post" action="/qr/product/create" enctype="multipart/form-data" class="qr-form">
+        <div class="form-grid">
+        <div class="form-group">
+          <label for="name">📦 Produktname</label>
+          <input type="text" id="name" name="name" placeholder="z. B. Ouhud QR Premium Lizenz" required>
+        </div>
+
+        <div class="form-group">
+          <label for="price">💰 Preis</label>
+          <input type="text" id="price" name="price" placeholder="z. B. 49.99 €" required>
+        </div>
+
+        <div class="form-group full">
+          <label for="description">📝 Beschreibung</label>
+          <textarea id="description" name="description" rows="3" placeholder="Kurze Beschreibung des Produkts …"></textarea>
+        </div>
+
+        <div class="form-group full">
+          <label for="link">🔗 Produktlink (optional)</label>
+          <input type="url" id="link" name="link" placeholder="https://ouhud.com/shop/produkt">
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      {% include "partials/qr_style_selector.html" %}
+    </form>
+  </div>
+</section>
+{% endblock %}

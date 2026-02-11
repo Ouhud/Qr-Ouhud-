@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}📶 WLAN-QR-Code Generator – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator wifi-generator">
+  <h1>📶 WLAN-QR-Code Generator</h1>
+  <p class="subtitle">
+    Erstelle einen professionellen QR-Code, um dein WLAN bequem zu teilen.
+  </p>
+
+  <!-- 🔧 Wichtig: kein multipart/enctype -->
+  <form method="post" action="/qr/wifi/generate" enctype="multipart/form-data" class="qr-form">
+
+    <!-- 📡 WLAN-Daten -->
+    <div class="form-group">
+      <label for="ssid">📡 WLAN-Name (SSID):</label>
+      <input type="text" id="ssid" name="ssid" placeholder="z. B. Ouhud-Office" required>
+    </div>
+
+    <div class="form-group">
+      <label for="password">🔑 Passwort:</label>
+      <input type="text" id="password" name="password" placeholder="••••••••">
+    </div>
+
+    <div class="form-group">
+      <label for="encryption">🔒 Verschlüsselung:</label>
+      <select id="encryption" name="encryption">
+        <option value="WPA" selected>WPA/WPA2/WPA3</option>
+        <option value="WEP">WEP</option>
+        <option value="nopass">Keine</option>
+      </select>
+    </div>
+
+    <div class="form-group checkbox">
+      <input type="hidden" name="hidden" value="false"> <!-- 👈 sendet immer false -->
+      <label>
+        <input type="checkbox" name="hidden" value="true">
+        🔕 Verstecktes Netzwerk
+      </label>
+    </div>
+
+    <hr class="divider">
+
+    <!-- 🎨 Designauswahl -->
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+{% endblock %}

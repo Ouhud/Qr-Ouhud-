@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% block title %}🔒 Sicherheit – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator pdf-generator">
+
+  <h1>🔒 Sicherheit</h1>
+  <p class="subtitle">
+    Verwalte die sicherheitsrelevanten Einstellungen deines Kontos: Passwort, 2FA,
+    Login-Geräte, API-Schlüssel und Konto-Löschung.
+  </p>
+
+  <!-- ✅ PASSWORT ÄNDERN -->
+  <div class="qr-form">
+    <h2 class="form-title"><i class="bi bi-key-fill"></i> Passwort ändern</h2>
+
+    {% if request.query_params.get("msg") == "updated" %}
+      <div class="alert success">✅ Passwort erfolgreich geändert.</div>
+    {% elif request.query_params.get("msg") == "device_removed" %}
+      <div class="alert success">✅ Sitzung wurde beendet.</div>
+    {% elif request.query_params.get("error") == "wrong_old" %}
+      <div class="alert error">❌ Das alte Passwort ist falsch.</div>
+    {% elif request.query_params.get("error") == "nomatch" %}
+      <div class="alert error">⚠️ Die neuen Passwörter stimmen nicht überein.</div>
+    {% elif request.query_params.get("error") == "device_not_found" %}
+      <div class="alert error">❌ Gerät wurde nicht gefunden.</div>
+    {% endif %}
+
+    <form method="post" action="/settings/security/change-password" class="space-y">
+      <div class="form-group">
+        <label>Aktuelles Passwort</label>
+        <input type="password" name="old_password" required>
+      </div>
+
+      <div class="form-group">
+        <label>Neues Passwort</label>
+        <input type="password" name="new_password" required>
+      </div>
+
+      <div class="form-group">
+        <label>Neues Passwort bestätigen</label>
+        <input type="password" name="confirm_password" required>
+      </div>
+
+      <button type="submit" class="btn-primary w-full">
+        💾 Passwort speichern
+      </button>
+    </form>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ✅ 2FA -->
+  <div class="qr-form">
+    <h2 class="form-title"><i class="bi bi-shield-lock-fill"></i> Zwei-Faktor-Authentifizierung (2FA)</h2>
+    <p class="info-text">Aktiviere eine zusätzliche Sicherheitsstufe für dein Konto (Authenticator-App).</p>
+
+    {% if request.query_params.get("msg") == "2fa_enabled" %}
+      <div class="alert success">✅ 2FA ist jetzt aktiv.</div>
+    {% elif request.query_params.get("msg") == "2fa_disabled" %}
+      <div class="alert success">✅ 2FA wurde deaktiviert.</div>
+    {% elif request.query_params.get("error") == "2fa_invalid_code" %}
+      <div class="alert error">❌ Ungültiger 2FA-Code.</div>
+    {% elif request.query_params.get("error") == "2fa_wrong_password" %}
+      <div class="alert error">❌ Passwort ist falsch.</div>
+    {% endif %}
+
+    {% if twofa_enabled %}
+      <div class="info-text"><strong>Status:</strong> Aktiv</div>
+      <form method="post" action="/settings/security/2fa/disable" class="space-y">
+        <div class="form-group">
+          <label>Passwort zur Bestätigung</label>
+          <input type="password" name="password" required>
+        </div>
+        <div class="form-group">
+          <label>Aktueller 2FA-Code</label>
+          <input type="text" name="otp_code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required>
+        </div>
+        <button class="btn-danger w-full" type="submit">2FA deaktivieren</button>
+      </form>
+    {% else %}
+      {% if twofa_qr %}
+        <div class="twofa-setup">
+          <p class="info-text">1. QR-Code in Google Authenticator / Authy scannen.</p>
+          <img src="{{ twofa_qr }}" alt="2FA Setup QR" class="twofa-qr">
+          <p class="info-text">2. Falls Scan nicht geht, diesen Secret verwenden:</p>
+          <div class="api-box">{{ twofa_secret }}</div>
+          <form method="post" action="/settings/security/2fa/confirm" class="space-y" style="margin-top:1rem;">
+            <div class="form-group">
+              <label>Code aus App eingeben</label>
+              <input type="text" name="otp_code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required>
+            </div>
+            <button class="btn-primary w-full" type="submit">2FA aktivieren</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="info-text"><strong>Status:</strong> Nicht aktiv</div>
+        <form method="post" action="/settings/security/2fa/start">
+          <button class="btn-primary w-full" type="submit">2FA jetzt einrichten</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <hr class="divider">
+
+  <!-- ✅ LOGIN-GERÄTE -->
+  <div class="qr-form">
+    <h2 class="form-title"><i class="bi bi-laptop"></i> Login-Geräte</h2>
+
+    {% if devices and devices|length > 0 %}
+      <ul class="device-list">
+        {% for d in devices %}
+        <li class="device-entry">
+          <div>
+            <strong>{{ d.device }}</strong><br>
+            <span class="device-meta">
+              IP: {{ d.ip }} • {{ d.last_login }}
+            </span>
+          </div>
+
+          <a href="/settings/security/device/remove/{{ d.id }}" class="btn-danger-sm">
+            Sitzung beenden
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="info-text">Keine aktiven Geräte angemeldet.</p>
+    {% endif %}
+  </div>
+
+  <hr class="divider">
+
+  <!-- ✅ API-KEYS -->
+  <div class="qr-form">
+    <h2 class="form-title"><i class="bi bi-key"></i> API-Schluessel</h2>
+    <p class="info-text">Nutze Header <code>X-API-Key: DEIN_KEY</code> fuer externe Software.</p>
+    <p class="info-text">API Basis: <code>/api/v1</code> (z. B. <code>GET /api/v1/qrs</code>)</p>
+
+    {% if newly_created_api_key %}
+      <div class="alert success">Neuer API-Schluessel erstellt. Er wird nur jetzt einmal vollstaendig angezeigt.</div>
+      <div class="api-key-once">
+        <input id="new-api-key" type="text" value="{{ newly_created_api_key }}" readonly>
+        <button id="copy-key-btn" type="button" class="btn-primary" onclick="copyApiKey()">Kopieren</button>
+      </div>
+      <p id="copy-key-status" class="info-text" style="margin-top:.35rem;"></p>
+      <p class="info-text"><strong>Wichtig:</strong> Nach Verlassen dieser Seite wird der volle Schluessel nicht mehr angezeigt.</p>
+      <div class="alert error">Speichere den Schluessel jetzt sicher in deinem Passwort-Manager.</div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <button type="button" class="btn-primary" onclick="copyApiKey()">Jetzt kopieren</button>
+        <button type="button" class="btn-danger" onclick="document.getElementById('new-api-key').value='';">Ausblenden</button>
+      </div>
+    {% endif %}
+
+    {% if request.query_params.get("msg") == "api_key_created" %}
+      <div class="alert success">✅ API-Schluessel erstellt.</div>
+    {% elif request.query_params.get("msg") == "api_key_renamed" %}
+      <div class="alert success">✅ API-Schluessel umbenannt.</div>
+    {% elif request.query_params.get("msg") == "api_key_deleted" %}
+      <div class="alert success">✅ API-Schluessel geloescht.</div>
+    {% elif request.query_params.get("error") == "api_key_name_exists" %}
+      <div class="alert error">❌ Dieser Schluesselname existiert bereits. Bitte einen anderen Namen nutzen.</div>
+    {% elif request.query_params.get("error") == "api_key_not_found" %}
+      <div class="alert error">❌ API-Schluessel nicht gefunden.</div>
+    {% endif %}
+
+    <form method="post" action="/settings/security/api-keys/create" class="space-y" style="margin-bottom:1rem;">
+      <div class="form-group">
+        <label>Name des Schluessels</label>
+        <input type="text" name="name" placeholder="z. B. CRM Integration" required>
+      </div>
+      <button class="btn-primary" type="submit">Neuen API-Schluessel erstellen</button>
+    </form>
+
+    {% if api_keys and api_keys|length > 0 %}
+      <div style="overflow:auto;">
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Schluessel</th>
+              <th>Erstellt</th>
+              <th>Zuletzt genutzt</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for k in api_keys %}
+              <tr>
+                <td>
+                  <form method="post" action="/settings/security/api-keys/{{ k.id }}/rename" style="display:flex;gap:.4rem;align-items:center;">
+                    <input type="text" name="name" value="{{ k.name }}" style="min-width:160px;">
+                    <button class="btn-primary" type="submit">Speichern</button>
+                  </form>
+                </td>
+                <td><code>{{ k.prefix }}...{{ k.last4 }}</code></td>
+                <td>{{ k.created_at.strftime("%d.%m.%Y %H:%M") if k.created_at else "-" }}</td>
+                <td>{{ k.last_used_at.strftime("%d.%m.%Y %H:%M") if k.last_used_at else "-" }}</td>
+                <td>
+                  <form method="post" action="/settings/security/api-keys/{{ k.id }}/delete" onsubmit="return confirm('API-Schluessel wirklich loeschen?');">
+                    <button class="btn-danger" type="submit">Loeschen</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="info-text">Noch keine API-Schluessel erstellt.</p>
+    {% endif %}
+  </div>
+  <hr class="divider">
+
+  <!-- ✅ KONTO LÖSCHEN -->
+  <div class="qr-form danger-zone">
+    <h2 class="form-title text-red"><i class="bi bi-trash-fill"></i> Konto löschen</h2>
+    <p class="info-text text-red">
+      Achtung: Dein Konto wird dauerhaft entfernt. Dieser Vorgang kann nicht rückgängig gemacht werden.
+    </p>
+
+    <form method="post" action="/settings/security/delete-account"
+          onsubmit="return confirm('Bist du sicher? Dieser Vorgang kann nicht rückgängig gemacht werden.');">
+
+      <button class="btn-danger w-full">❌ Konto endgültig löschen</button>
+    </form>
+  </div>
+
+</section>
+
+
+<!-- ✅ CSS exakt wie PDF-Seite -->
+<style>
+
+.qr-generator {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.qr-generator h1 {
+  font-size: 2rem;
+  margin-bottom: .5rem;
+}
+
+.subtitle {
+  margin-bottom: 2rem;
+  color: #64748b;
+}
+
+.qr-form {
+  background: #fff;
+  padding: 1.6rem;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+}
+
+.form-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: .3rem;
+  display: block;
+}
+
+input {
+  width: 100%;
+  padding: .6rem .8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  padding: .7rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: .2s;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+  padding: .75rem 1rem;
+  border-radius: 10px;
+}
+
+.api-key-once {
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.api-key-once input {
+  flex: 1;
+  min-width: 320px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  letter-spacing: .2px;
+  background: #f8fafc;
+}
+
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.api-table th, .api-table td {
+  padding: .6rem .4rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.btn-danger-sm {
+  color: #dc2626;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn-disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  padding: .7rem;
+  border-radius: 10px;
+  cursor: not-allowed;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 2rem 0;
+}
+
+.device-entry {
+  background: #f8fafc;
+  padding: .9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.api-box {
+  background: #f1f5f9;
+  border: 1px solid #d1d5db;
+  padding: .8rem;
+  border-radius: 8px;
+  word-break: break-all;
+}
+.twofa-setup {
+  text-align: center;
+}
+.twofa-qr {
+  width: 220px;
+  max-width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  padding: .5rem;
+}
+
+.alert {
+  padding: .7rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.alert.success {
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+.alert.error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+</style>
+
+<script>
+function copyApiKey() {
+  const input = document.getElementById("new-api-key");
+  const status = document.getElementById("copy-key-status");
+  const btn = document.getElementById("copy-key-btn");
+  if (!input) return;
+
+  const value = input.value || "";
+  const markSuccess = () => {
+    if (status) status.textContent = "Schluessel kopiert.";
+    if (btn) btn.textContent = "Kopiert";
+    setTimeout(() => {
+      if (btn) btn.textContent = "Kopieren";
+    }, 1500);
+  };
+  const markError = () => {
+    if (status) status.textContent = "Kopieren fehlgeschlagen. Bitte manuell markieren und kopieren.";
+  };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(value).then(markSuccess).catch(() => {
+      input.focus();
+      input.select();
+      try {
+        const ok = document.execCommand("copy");
+        if (ok) markSuccess();
+        else markError();
+      } catch (_) {
+        markError();
+      }
+    });
+    return;
+  }
+
+  input.focus();
+  input.select();
+  try {
+    const ok = document.execCommand("copy");
+    if (ok) markSuccess();
+    else markError();
+  } catch (_) {
+    markError();
+  }
+}
+</script>
+
+{% endblock %}

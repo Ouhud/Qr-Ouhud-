@@ -1,0 +1,188 @@
+# routes/qr/social.py
+# =============================================================================
+# 🚀 Social Media QR-Code Routes (Ouhud QR)
+# =============================================================================
+
+from __future__ import annotations
+import uuid
+import base64
+import html
+from pathlib import Path
+from typing import Optional
+
+from fastapi import APIRouter, Request, Form, Depends, HTTPException, UploadFile, File
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+
+from database import get_db
+from models.qrcode import QRCode
+from routes.qr.logo_utils import save_qr_logo
+from routes.utils import normalize_url
+from utils.qr_generator import generate_qr_png
+from utils.qr_config import get_qr_style
+
+router = APIRouter(prefix="/qr/social", tags=["Social QR"])
+
+templates = Jinja2Templates(directory="templates")
+
+QR_DIR = Path("static/generated_qr")
+QR_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@router.get("/", response_class=HTMLResponse)
+def show_form(request: Request) -> HTMLResponse:
+    """Zeigt das Social Media QR-Formular."""
+    return templates.TemplateResponse("qr_social_form.html", {"request": request})
+
+
+@router.post("/generate", response_class=HTMLResponse)
+async def create_social_qr(
+    request: Request,
+    name: str = Form(""),
+    website: str = Form(""),
+    facebook: str = Form(""),
+    instagram: str = Form(""),
+    whatsapp: str = Form(""),
+    linkedin: str = Form(""),
+    xing: str = Form(""),
+    github: str = Form(""),
+    tiktok: str = Form(""),
+    twitter: str = Form(""),
+    platform: str = Form(""),
+    url: str = Form(""),
+    title: str = Form(""),
+    style: str = Form("modern"),
+    logo: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Erstellt einen Social Media QR-Code."""
+    
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Nicht eingeloggt")
+    slug = uuid.uuid4().hex[:10]
+    logo_fs_path, logo_public_path = save_qr_logo(logo, slug, "social_logo")
+
+    links = {
+        "Website": normalize_url(website) if website else "",
+        "Facebook": normalize_url(facebook) if facebook else "",
+        "Instagram": normalize_url(instagram) if instagram else "",
+        "WhatsApp": normalize_url(whatsapp) if whatsapp else "",
+        "LinkedIn": normalize_url(linkedin) if linkedin else "",
+        "Xing": normalize_url(xing) if xing else "",
+        "GitHub": normalize_url(github) if github else "",
+        "TikTok": normalize_url(tiktok) if tiktok else "",
+        "X / Twitter": normalize_url(twitter) if twitter else "",
+    }
+
+    legacy_target = normalize_url(url) if url else ""
+    fallback_target = legacy_target or next((v for v in links.values() if v), "")
+    fallback_platform = platform or next((k.lower() for k, v in links.items() if v), "social")
+    display_name = title or name or f"Social: {fallback_platform}"
+    if not fallback_target:
+        raise HTTPException(status_code=400, detail="Mindestens ein Social-Link ist erforderlich")
+
+    social_links_html = "".join(
+        f'<a class="social-link" href="{html.escape(link)}" target="_blank" rel="noopener">{html.escape(label)}</a>'
+        for label, link in links.items()
+        if link
+    )
+    avatar_html = (
+        f'<img class="social-avatar" src="{html.escape(logo_public_path)}" alt="Profilbild">'
+        if logo_public_path
+        else ""
+    )
+    public_html = f"""<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{html.escape(display_name)}</title>
+  <style>
+    body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f3f6ff;color:#0f172a}}
+    .wrap{{max-width:620px;margin:0 auto;padding:22px}}
+    .card{{background:#fff;border:1px solid #dbe7ff;border-radius:18px;box-shadow:0 10px 26px rgba(13,42,120,.12);padding:22px}}
+    .social-avatar{{width:92px;height:92px;border-radius:50%;object-fit:cover;border:3px solid #dbeafe;display:block;margin:0 auto 12px}}
+    h1{{margin:0 0 14px;text-align:center;color:#0d2a78;font-size:1.35rem}}
+    .social-grid{{display:grid;gap:10px}}
+    .social-link{{display:block;text-decoration:none;background:#0d2a78;color:#fff;border-radius:12px;padding:12px 14px;font-weight:700;text-align:center}}
+    .social-link:hover{{background:#1d4ed8}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      {avatar_html}
+      <h1>{html.escape(display_name)}</h1>
+      <div class="social-grid">{social_links_html}</div>
+    </div>
+  </div>
+</body>
+</html>"""
+    
+    # Dynamische URL
+    dynamic_url = f"https://ouhud.com/d/{slug}"
+    
+    # QR-Code generieren
+    style_conf = get_qr_style(style)
+    result = generate_qr_png(
+        payload=dynamic_url,
+        size=600,
+        fg=style_conf["fg"],
+        bg=style_conf["bg"],
+        gradient=style_conf.get("gradient"),
+        frame_color=style_conf.get("frame_color"),
+        module_style=style_conf.get("module_style"),
+        eye_style=style_conf.get("eye_style"),
+        logo_path=logo_fs_path,
+    )
+    
+    qr_bytes = result if isinstance(result, bytes) else result.get("bytes", b"")
+    
+    # Bild speichern
+    qr_file = QR_DIR / f"social_{slug}.png"
+    with open(qr_file, "wb") as f:
+        f.write(qr_bytes)
+    
+    # In DB speichern
+    qr = QRCode(
+        user_id=user_id,
+        slug=slug,
+        type="social",
+        dynamic_url=dynamic_url,
+        image_path=str(qr_file),
+        logo_path=logo_public_path,
+        style=style,
+        title=display_name,
+    )
+    qr.set_data(
+        {
+            "platform": fallback_platform,
+            "url": fallback_target,
+            "name": name,
+            "website": links["Website"],
+            "facebook": links["Facebook"],
+            "instagram": links["Instagram"],
+            "whatsapp": links["WhatsApp"],
+            "linkedin": links["LinkedIn"],
+            "xing": links["Xing"],
+            "github": links["GitHub"],
+            "tiktok": links["TikTok"],
+            "twitter": links["X / Twitter"],
+            "public_html": public_html,
+            "title": title,
+            "logo_path": logo_public_path,
+        }
+    )
+    db.add(qr)
+    db.commit()
+    db.refresh(qr)
+    
+    # Base64 für Preview
+    qr_base64 = base64.b64encode(qr_bytes).decode("utf-8")
+    
+    return templates.TemplateResponse(
+        "qr_social_result.html",
+        {"request": request, "qr": qr, "qr_image": qr_base64, "dynamic_url": dynamic_url, "name": display_name},
+    )

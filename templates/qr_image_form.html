@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}🖼️ Bild-QR-Code erstellen – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator">
+  <h1>🖼️ Bild-QR-Code erstellen</h1>
+  <p class="subtitle">
+    Lade ein Bild hoch, um einen <strong>dynamischen QR-Code</strong> zu erzeugen.  
+    Du kannst später das Bild aktualisieren, ohne den QR-Code zu ändern.
+  </p>
+
+  <form method="post" action="/qr/image/generate" enctype="multipart/form-data" class="qr-form">
+
+    <!-- 🧾 Bezeichnung -->
+    <div class="form-group">
+      <label for="title">📝 Bezeichnung:</label>
+      <input type="text" id="title" name="title" placeholder="Beispiel: Produktbild, Eventbanner, Flyer …" required>
+    </div>
+
+    <!-- 📂 Bild-Datei -->
+    <div class="form-group">
+      <label for="file">📁 Bild auswählen:</label>
+      <input type="file" id="file" name="file" accept="image/*" required onchange="previewImage(event)">
+    </div>
+
+    <!-- 📸 Vorschau -->
+    <div id="image-preview-container" style="display:none;">
+      <p class="preview-label">📷 Bild-Vorschau:</p>
+      <img id="image-preview" class="preview-img" alt="Bild Vorschau">
+    </div>
+
+    <hr class="divider">
+
+    <!-- 🎨 Stil-Auswahl -->
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+
+<!-- === SCRIPT: Bildvorschau === -->
+<script>
+function previewImage(event) {
+  const file = event.target.files[0];
+  const container = document.getElementById('image-preview-container');
+  const img = document.getElementById('image-preview');
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.src = e.target.result;
+      container.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+</script>
+{% endblock %}

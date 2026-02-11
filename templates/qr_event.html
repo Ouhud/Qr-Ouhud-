@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}🎟️ Event-QR-Code – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator">
+  <div class="container text-center">
+    <h1>🎟️ Event-QR-Code Generator</h1>
+    <p class="subtitle">
+      Erstelle einen QR-Code, der Informationen zu deinem Event enthält – ideal für Einladungen, Flyer oder Websites.
+    </p>
+
+    <form method="post" action="/qr/event/generate" enctype="multipart/form-data" class="qr-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="title">📌 Event-Titel</label>
+          <input type="text" id="title" name="title" placeholder="z. B. Ouhud Launch Party" required />
+        </div>
+
+        <div class="form-group">
+          <label for="location">📍 Ort</label>
+          <input type="text" id="location" name="location" placeholder="z. B. Zürich, Schweiz" required />
+        </div>
+
+        <div class="form-group">
+          <label for="start">🕒 Startzeit</label>
+          <input type="datetime-local" id="start" name="start" required />
+        </div>
+
+        <div class="form-group">
+          <label for="end">🏁 Endzeit</label>
+          <input type="datetime-local" id="end" name="end" required />
+        </div>
+
+        <div class="form-group full">
+          <label for="description">💬 Beschreibung</label>
+          <textarea id="description" name="description" rows="4" placeholder="Kurze Beschreibung deines Events …"></textarea>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      {% include "partials/qr_style_selector.html" %}
+    </form>
+  </div>
+</section>
+{% endblock %}

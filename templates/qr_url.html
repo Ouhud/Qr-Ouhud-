@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}🌐 URL-QR-Code Generator – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator url-generator">
+  <h1>🌐 URL-QR-Code Generator</h1>
+  <p class="subtitle">
+    Erstelle einen QR-Code, der zu einer beliebigen Webseite oder Online-Ressource führt.
+  </p>
+
+  {% if message %}
+    <div class="alert success">
+      {{ message|safe }}
+    </div>
+  {% endif %}
+
+  <!-- === FORMULAR === -->
+  <form method="post" action="/qr/url/generate" enctype="multipart/form-data" class="qr-form">
+    <!-- 🧾 Grunddaten -->
+    <div class="form-group">
+      <label for="name">📝 Bezeichnung:</label>
+      <input type="text" id="name" name="name" placeholder="z. B. Meine Webseite" required>
+    </div>
+
+    <div class="form-group">
+      <label for="url">🔗 Ziel-URL:</label>
+      <input type="url" id="url" name="url" placeholder="https://example.com" required>
+    </div>
+
+    <!-- 🎨 QR-Stil-Auswahl -->
+    {% include "partials/qr_style_selector.html" %}
+
+  </form>
+
+  <!-- === ERZEUGTER QR-CODE === -->
+  {% if qr_image or (qr and qr.image_path) %}
+    {% set qr_img_path = "" %}
+    {% if qr and qr.image_path %}
+      {% set qr_img_path = qr.image_path if qr.image_path.startswith('/') else '/' + qr.image_path %}
+    {% endif %}
+    <hr class="divider">
+    <div class="qr-preview" style="margin-top:2rem;text-align:center;">
+      <h2>📸 Dein QR-Code ist fertig!</h2>
+      
+      {% if qr_image %}
+  <!-- Falls vom Python-Code qr_image direkt übergeben wird -->
+  <img src="{{ qr_image }}" alt="QR-Code" width="250"
+       style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+{% elif qr.image_path %}
+  <!-- Falls das Bild in der Datenbank gespeichert ist -->
+  <img src="{{ qr_img_path }}" alt="QR-Code" width="250"
+       style="border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+{% endif %}
+
+
+      <div style="margin-top:1rem;">
+        <button onclick="printQR()" class="btn secondary">🖨️ Drucken</button>
+        {% if qr and qr.image_path %}
+          <a href="{{ qr_img_path }}" download class="btn primary">⬇️ Herunterladen</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</section>
+
+<script>
+function printQR() {
+  window.print();
+}
+</script>
+{% endblock %}

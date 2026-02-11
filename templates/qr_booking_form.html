@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Booking QR{% endblock %}
+{% block content %}
+<section class="qr-generator">
+  <h1>📅 Terminbuchung-QR</h1>
+  <form method="post" action="/qr/booking/generate" enctype="multipart/form-data" class="qr-form">
+    <label>Provider</label><input type="text" name="provider" placeholder="Calendly, Booking ...">
+    <label>Booking URL *</label><input type="url" name="booking_url" required>
+    <label>Titel</label><input type="text" name="title">
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+{% endblock %}

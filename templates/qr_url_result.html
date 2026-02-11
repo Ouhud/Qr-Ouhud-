@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}✅ URL-QR-Code erstellt – Ouhud QR{% endblock %}
+
+{% block content %}
+
+<section class="qr-generator url-generator" style="max-width:850px;margin:2rem auto;text-align:center;">
+
+    <!-- ✅ Überschrift -->
+    <h1 style="color:var(--primary);font-size:2rem;font-weight:700;margin-bottom:1rem;">
+        ✅ URL-QR-Code erfolgreich erstellt!
+    </h1>
+
+    <!-- ✅ QR-Bild -->
+    {% if qr and qr.image_path %}
+    <div style="margin:2rem 0;">
+        <img src="/{{ qr.image_path }}"
+             alt="QR-Code"
+             style="width:320px;height:320px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
+    </div>
+    {% endif %}
+
+    <!-- ✅ Dynamischer Link -->
+    {% if dynamic_url %}
+    <p style="font-size:1.1rem;color:#1e293b;margin-bottom:2rem;">
+        📎 <strong>Dynamischer Link:</strong><br>
+        <a href="{{ dynamic_url }}" target="_blank"
+           style="color:var(--accent);font-weight:600;">
+           {{ dynamic_url }}
+        </a>
+    </p>
+    {% endif %}
+
+    <!-- ✅ Ziel-URL -->
+    {% if target_url %}
+    <p style="font-size:1rem;color:#64748b;margin-bottom:2rem;">
+        🔗 <strong>Ziel-URL:</strong><br>
+        <a href="{{ target_url }}" target="_blank"
+           style="color:var(--accent);font-weight:500;">
+           {{ target_url }}
+        </a>
+    </p>
+    {% endif %}
+
+    <!-- ✅ Aktionen -->
+    <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:1rem;margin-top:2rem;">
+
+        <!-- 🖨️ Drucken -->
+        <button onclick="window.print()" 
+                class="btn secondary"
+                style="padding:0.85rem 1.4rem;border-radius:12px;font-size:1rem;">
+           🖨️ Drucken
+        </button>
+
+        <!-- ⬇️ Download -->
+        {% if qr and qr.image_path %}
+        <a href="/{{ qr.image_path }}" download
+           class="btn primary"
+           style="padding:0.85rem 1.4rem;border-radius:12px;font-size:1rem;">
+           ⬇️ Herunterladen
+        </a>
+        {% endif %}
+
+        <!-- ➕ Neuen erstellen -->
+        <a href="/qr/url/"
+           class="btn"
+           style="background:#e2e8f0;padding:0.85rem 1.4rem;border-radius:12px;font-size:1rem;color:#1e293b;">
+           ➕ Neuen QR-Code erstellen
+        </a>
+
+        {% if qr %}
+        <a href="/qr/edit/{{ qr.slug }}"
+           class="btn secondary"
+           style="padding:0.85rem 1.4rem;border-radius:12px;font-size:1rem;">
+           ✏️ Bearbeiten
+        </a>
+        {% endif %}
+
+    </div>
+
+</section>
+
+<script>
+function printQR() {
+    window.print();
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}💳 Zahlungs-QR-Code – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator">
+  <div class="container text-center">
+    <h1>💳 Zahlungs-QR-Code Generator</h1>
+    <p class="subtitle">
+      Erstelle einen SEPA-Zahlungs-QR-Code (EPC-QR), um Überweisungen einfach per Scan zu ermöglichen.
+    </p>
+
+    <form method="post" action="/qr/payment/generate" enctype="multipart/form-data" class="qr-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="recipient">👤 Empfänger</label>
+          <input type="text" id="recipient" name="recipient" placeholder="z. B. Ouhud GmbH" required />
+        </div>
+
+        <div class="form-group">
+          <label for="iban">🏦 IBAN</label>
+          <input type="text" id="iban" name="iban" placeholder="z. B. CH93 0076 2011 6238 5295 7" required />
+        </div>
+
+        <div class="form-group">
+          <label for="amount">💶 Betrag (EUR)</label>
+          <input type="number" step="0.01" id="amount" name="amount" placeholder="z. B. 59.90" required />
+        </div>
+
+        <div class="form-group full">
+          <label for="purpose">📝 Verwendungszweck</label>
+          <input type="text" id="purpose" name="purpose" placeholder="z. B. Jahresabo Ouhud QR Pro" />
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      {% include "partials/qr_style_selector.html" %}
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Profil - Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="profile-page">
+  <h1>Mein Profil</h1>
+
+  <div class="card">
+    <h2>Profilbild</h2>
+    <div class="avatar-row">
+      <img class="avatar" src="{{ user.profile_image or '/static/default-avatar.png' }}" alt="Profilbild">
+      <form id="avatar-form" action="/profile/update-image" method="post" enctype="multipart/form-data">
+        <label class="btn secondary" for="avatar-input">Bild waehlen</label>
+        <input id="avatar-input" type="file" name="file" accept="image/*" hidden>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Persoenliche Daten</h2>
+    <form action="/profile/update" method="post">
+      <label>Benutzername</label>
+      <input type="text" name="username" value="{{ user.username or '' }}">
+
+      <label>Vorname</label>
+      <input type="text" name="first_name" value="{{ user.first_name or '' }}">
+
+      <label>Nachname</label>
+      <input type="text" name="last_name" value="{{ user.last_name or '' }}">
+
+      <label>E-Mail</label>
+      <input type="email" name="email" value="{{ user.email or '' }}" required>
+
+      <button type="submit" class="btn primary">Aenderungen speichern</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Meine QR-Codes ({{ qr_count }})</h2>
+    {% if qr_items %}
+      <div class="qr-list">
+        {% for item in qr_items %}
+          <article class="qr-item">
+            <img class="qr-img" src="{{ item.image_path }}" alt="QR">
+            <div class="qr-main">
+              <h3>{{ item.title }}</h3>
+              <p class="meta">
+                Typ: {{ item.type|upper }} | Slug: {{ item.slug }} | Rolle: {{ item.access_role|upper }}
+              </p>
+              {% if item.preview %}
+                <p class="preview">{{ item.preview }}</p>
+              {% endif %}
+            </div>
+            <div class="actions">
+              <a class="btn secondary" href="{{ item.view_url }}" target="_blank" rel="noopener">Oeffnen</a>
+              <a class="btn primary" href="{{ item.edit_url }}">Bearbeiten</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Du hast noch keine QR-Codes erstellt.</p>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+.profile-page { max-width: 980px; margin: 0 auto; }
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.avatar-row { display: flex; align-items: center; gap: 1rem; }
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  object-fit: cover;
+}
+label { display: block; margin: .5rem 0 .3rem; }
+input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: .65rem;
+  margin-bottom: .5rem;
+  box-sizing: border-box;
+}
+.qr-list { display: grid; gap: .75rem; }
+.qr-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: .75rem;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: .65rem;
+}
+.qr-img { width: 64px; height: 64px; object-fit: contain; }
+.qr-main h3 { margin: 0; font-size: 1rem; }
+.meta { margin: .25rem 0; color: #475569; font-size: .9rem; }
+.preview { margin: 0; color: #0f172a; font-size: .92rem; }
+.actions { display: flex; gap: .5rem; }
+.btn {
+  display: inline-block;
+  border-radius: 8px;
+  padding: .45rem .7rem;
+  text-decoration: none;
+  border: 1px solid #2563eb;
+}
+.btn.primary { background: #2563eb; color: #fff; }
+.btn.secondary { background: #fff; color: #2563eb; }
+@media (max-width: 760px) {
+  .qr-item { grid-template-columns: 56px 1fr; }
+  .actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
+</style>
+
+<script>
+document.getElementById("avatar-input")?.addEventListener("change", function () {
+  if (this.files && this.files.length > 0) {
+    document.getElementById("avatar-form")?.submit();
+  }
+});
+</script>
+{% endblock %}

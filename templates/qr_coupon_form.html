@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Coupon QR{% endblock %}
+{% block content %}
+<section class="qr-generator">
+  <h1>🎟️ Gutschein/Coupon-QR</h1>
+  <form method="post" action="/qr/coupon/generate" enctype="multipart/form-data" class="qr-form">
+    <label>Coupon Code *</label><input type="text" name="code" required>
+    <label>Angebot *</label><input type="text" name="offer" required placeholder="10% Rabatt">
+    <label>Ablaufdatum</label><input type="datetime-local" name="expires_at">
+    <label>Max. Einlösungen</label><input type="number" name="max_redemptions" value="100" min="0">
+    <label>Titel</label><input type="text" name="title">
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+{% endblock %}

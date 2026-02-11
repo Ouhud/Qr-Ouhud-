@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% set title = "Impressum – Ouhud GmbH" %}
+
+{% block content %}
+<main class="legal-container">
+  <article class="legal-content">
+    <h1>📄 Impressum</h1>
+
+    <div class="grid md:grid-cols-2 gap-10">
+      <section>
+        <h2>🏢 Angaben gemäß § 5 TMG / Art. 14 CH-DSG</h2>
+        <p>
+          <strong>Ouhud GmbH</strong><br>
+          Geschäftsführer: <strong>Mohamad Hamza Mehmalat</strong><br>
+          Sundernholz 112<br>
+          45134 Essen, Deutschland<br>
+          (Zweigniederlassung Schweiz in Vorbereitung)
+        </p>
+        <p>
+          📞 Telefon: <a href="tel:+4915150012000">+49 151 50012000</a><br>
+          ✉️ E-Mail: <a href="mailto:info@ouhud.com">info@ouhud.com</a><br>
+          🌐 Website: <a href="https://ouhud.com" target="_blank">https://ouhud.com</a>
+        </p>
+      </section>
+
+      <section>
+        <h2>⚖️ Registereintrag</h2>
+        <p>
+          Eingetragen im Handelsregister beim Amtsgericht Musterstadt<br>
+          Handelsregisternummer (HRB): <strong>123456</strong>
+        </p>
+
+        <h2>💰 Umsatzsteuer-ID</h2>
+        <p>
+          Umsatzsteuer-Identifikationsnummer gemäß § 27 a UStG:<br>
+          <strong>DE 123 456 789</strong>
+        </p>
+
+        <h2>👤 Vertretungsberechtigt</h2>
+        <p>
+          Mohamad Hamza Mehmalat<br>
+          Geschäftsführer der Ouhud GmbH
+        </p>
+      </section>
+
+      <section>
+        <h2>📜 Haftung für Inhalte</h2>
+        <p>
+          Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und
+          Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs. 1 TMG für eigene Inhalte
+          nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir nicht verpflichtet,
+          übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine
+          rechtswidrige Tätigkeit hinweisen.
+        </p>
+        <p>
+          Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben hiervon unberührt.
+          Eine Haftung ist jedoch erst ab Kenntnis einer konkreten Rechtsverletzung möglich.
+          Bei Bekanntwerden entsprechender Verstöße entfernen wir die Inhalte umgehend.
+        </p>
+      </section>
+
+      <section>
+        <h2>🔗 Haftung für Links</h2>
+        <p>
+          Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben.
+          Deshalb können wir für diese fremden Inhalte keine Gewähr übernehmen.
+          Für den Inhalt der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich.
+        </p>
+        <p>
+          Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße überprüft,
+          rechtswidrige Inhalte waren zu diesem Zeitpunkt nicht erkennbar.
+          Eine dauerhafte inhaltliche Kontrolle ist ohne konkrete Anhaltspunkte einer Rechtsverletzung nicht zumutbar.
+          Bei Bekanntwerden entfernen wir derartige Links sofort.
+        </p>
+      </section>
+
+      <section>
+        <h2>🧠 Urheberrecht</h2>
+        <p>
+          Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht.
+          Beiträge Dritter sind als solche gekennzeichnet.
+          Jede Verwertung außerhalb der Grenzen des Urheberrechts bedarf der schriftlichen Zustimmung des Autors oder Erstellers.
+        </p>
+        <p>
+          Downloads und Kopien dieser Seite sind nur für den privaten, nicht kommerziellen Gebrauch gestattet.
+          Sollten Sie eine Urheberrechtsverletzung bemerken, informieren Sie uns bitte.
+          Bei Bekanntwerden entfernen wir derartige Inhalte unverzüglich.
+        </p>
+      </section>
+
+      <section>
+        <h2>⚖️ EU-Streitschlichtung / OS-Plattform</h2>
+        <p>
+          Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:<br>
+          <a href="https://ec.europa.eu/consumers/odr" target="_blank">
+            https://ec.europa.eu/consumers/odr
+          </a><br>
+          Unsere E-Mail-Adresse finden Sie oben im Impressum.
+        </p>
+        <p>
+          Wir sind nicht verpflichtet und grundsätzlich nicht bereit, an Verbraucherschlichtungsverfahren teilzunehmen.
+        </p>
+      </section>
+    </div>
+
+
+  </article>
+</main>
+{% endblock %}
+
+{% block styles %}
+<style>
+.legal-container {
+  display:flex;justify-content:center;padding:2rem 1rem;background:#f9fafb;
+}
+.legal-content {
+  max-width:1100px;background:#fff;border-radius:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.05);
+  padding:2.5rem 3rem;line-height:1.6;
+}
+.legal-content h1 {
+  font-size:2rem;margin-bottom:1rem;color:#1e1b4b;font-weight:800;
+}
+.legal-content h2 {
+  font-size:1.15rem;margin-top:1.6rem;margin-bottom:0.6rem;
+  color:#312e81;font-weight:600;
+}
+.legal-content p, .legal-content ul {margin-bottom:1rem;}
+.legal-content a {color:#4f46e5;}
+.grid {display:grid;gap:2rem;}
+@media(min-width:768px){.grid{grid-template-columns:repeat(2,1fr);gap:2.5rem;}}
+.legal-footer {
+  border-top:1px solid #e5e7eb;margin-top:2rem;padding-top:1rem;
+  text-align:center;font-size:.9rem;color:#6b7280;
+}
+</style>
+{% endblock %}

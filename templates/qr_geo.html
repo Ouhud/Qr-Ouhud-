@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}📍 Geo-QR-Code – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator">
+  <div class="container text-center">
+    <h1>📍 Geo-QR-Code Generator</h1>
+    <p class="subtitle">
+      Erstelle einen QR-Code, der direkt zu einer bestimmten geografischen Position führt – ideal für Treffpunkte, Events oder Orte.
+    </p>
+
+    <form method="post" action="/qr/geo/generate" enctype="multipart/form-data" class="qr-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="latitude">🧭 Breitengrad (Latitude)</label>
+          <input type="text" id="latitude" name="latitude" placeholder="z. B. 47.3769" required>
+        </div>
+
+        <div class="form-group">
+          <label for="longitude">🧭 Längengrad (Longitude)</label>
+          <input type="text" id="longitude" name="longitude" placeholder="z. B. 8.5417" required>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      {% include "partials/qr_style_selector.html" %}
+    </form>
+  </div>
+</section>
+{% endblock %}

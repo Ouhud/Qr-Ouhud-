@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Lead Formular QR{% endblock %}
+{% block content %}
+<section class="qr-generator">
+  <h1>🧾 Formular/Lead-QR</h1>
+  <form method="post" action="/qr/lead/generate" enctype="multipart/form-data" class="qr-form">
+    <label>Überschrift</label><input type="text" name="headline" value="Kontakt aufnehmen">
+    <label>Beschreibung</label><textarea name="description" rows="3">Bitte Kontaktdaten eintragen.</textarea>
+    <label>Erfolgsmeldung</label><input type="text" name="success_message" value="Danke! Wir melden uns zeitnah.">
+    <label>Titel</label><input type="text" name="title">
+    {% include "partials/qr_style_selector.html" %}
+  </form>
+</section>
+{% endblock %}

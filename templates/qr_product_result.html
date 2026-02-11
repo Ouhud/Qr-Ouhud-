@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}✅ Produkt-QR – Erfolgreich erstellt{% endblock %}
+{% block content %}
+
+<section class="max-w-4xl mx-auto p-8 bg-white rounded-3xl shadow-lg font-[Inter]">
+
+  <!-- ✅ HEADER -->
+  <header class="mb-8 text-center">
+    <h1 class="text-3xl font-bold text-[var(--primary)] flex justify-center items-center gap-2">
+      ✅ Produkt-QR-Code wurde erstellt
+    </h1>
+    <p class="text-gray-500 mt-2">
+      Dein QR-Code wurde erfolgreich generiert und gespeichert.
+    </p>
+  </header>
+
+
+  <!-- ✅ CONTENT-GRID -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+
+    <!-- ✅ QR-Code Anzeige -->
+    <div class="text-center">
+      {% if qr_image %}
+        <img src="data:image/png;base64,{{ qr_image }}" 
+             alt="QR Code"
+             class="w-full rounded-2xl shadow-md border border-gray-200">
+      {% elif product.qr_image %}
+        <img src="/{{ product.qr_image }}"
+             alt="QR Code"
+             class="w-full rounded-2xl shadow-md border border-gray-200">
+      {% endif %}
+
+      <!-- ✅ Actions unter dem QR-Bild -->
+      <div class="mt-4 flex flex-wrap justify-center gap-3">
+        <a href="/qr/product/v/{{ product.public_id }}"
+           class="px-4 py-2 rounded-xl bg-[var(--primary)] text-white font-semibold shadow hover:bg-[var(--primary-dark)]">
+          👁️ Anzeigen
+        </a>
+
+        <a href="/{{ product.qr_image }}" download
+           class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold shadow hover:bg-emerald-700">
+          ⬇️ Download PNG
+        </a>
+      </div>
+    </div>
+
+
+    <!-- ✅ Produkt-Informationen -->
+    <div class="p-6 bg-gray-50 rounded-2xl border">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">{{ product.name }}</h2>
+
+      <ul class="space-y-2 text-gray-700">
+        <li><strong>💰 Preis:</strong> {{ '%.2f'|format(product.price) }} €</li>
+
+        {% if product.description %}
+        <li><strong>📝 Beschreibung:</strong><br>{{ product.description }}</li>
+        {% endif %}
+
+        {% if product.link %}
+        <li>
+          <strong>🔗 Produktlink:</strong><br>
+          <a href="{{ product.link }}" class="text-blue-700 underline break-words" target="_blank">
+            {{ product.link }}
+          </a>
+        </li>
+        {% endif %}
+
+        <li>
+          <strong>🧭 Dynamische URL:</strong><br>
+          <a href="{{ dynamic_url }}" class="text-blue-700 underline break-words" target="_blank">
+            {{ dynamic_url }}
+          </a>
+        </li>
+
+        <li>
+          <strong>🎨 Design:</strong>
+          <div class="mt-1">
+            Stil: <span class="font-semibold">{{ product.style }}</span><br>
+            Vordergrundfarbe: <span class="font-semibold">{{ product.fg_color }}</span><br>
+            Hintergrundfarbe: <span class="font-semibold">{{ product.bg_color }}</span><br>
+            Größe: <span class="font-semibold">{{ product.qr_size }} px</span>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+
+
+  <!-- ✅ Footer-Aktionen -->
+  <div class="mt-10 flex flex-wrap justify-center gap-4">
+
+    <a href="/qr/product/"
+       class="px-5 py-3 rounded-xl bg-gray-200 text-gray-800 shadow hover:bg-gray-300">
+      ➕ Neuen Produkt-QR erstellen
+    </a>
+
+    <a href="/qr/my"
+       class="px-5 py-3 rounded-xl bg-[var(--primary)] text-white shadow font-semibold hover:bg-[var(--primary-dark)]">
+      📋 Meine QR-Codes
+    </a>
+
+    <a href="/dashboard"
+       class="px-5 py-3 rounded-xl bg-gray-200 text-gray-800 shadow hover:bg-gray-300">
+      🔙 Zurück zum Dashboard
+    </a>
+
+  </div>
+
+</section>
+
+<style>
+  :root {
+    --primary: #0d2a78;
+    --primary-dark: #0b1742;
+  }
+</style>
+
+{% endblock %}

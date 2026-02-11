@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}💳 Abonnement & Tarife – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="billing-container">
+  <h1>💳 Abonnement & Tarife</h1>
+  <p class="subtitle">
+    Verwalte deinen aktuellen Tarif, verlängere dein Abo oder führe ein Upgrade durch.
+  </p>
+
+  <div class="billing-card">
+    <h2>🔹 Aktueller Tarif</h2>
+    <p>
+      <strong>{{ user.plan.name if user.plan else "Basic" }}</strong><br>
+      Status: 
+      {% if user.plan_status == "active" %}
+        <span class="status active">✅ Aktiv</span>
+      {% elif user.plan_status == "cancelled" %}
+        <span class="status cancelled">🚫 Gekündigt</span>
+      {% else %}
+        <span class="status pending">⏳ Ausstehend</span>
+      {% endif %}
+      <br>
+      Ablaufdatum:
+      {% if user.plan_expiry %}
+        {{ user.plan_expiry.strftime('%d.%m.%Y') }}
+      {% else %}
+        — Kein Ablaufdatum —
+      {% endif %}
+    </p>
+
+    <div class="buttons">
+      <a href="/billing/upgrade" class="btn primary">🚀 Upgrade durchführen</a>
+      <a href="/billing/cancel" class="btn danger">❌ Abo kündigen</a>
+    </div>
+  </div>
+
+  <div class="plans">
+    <div class="plan">
+      <h3>🟢 Basic</h3>
+      <p>4,99 € / Monat</p>
+      <ul>
+        <li>Bis zu 10 QR-Codes</li>
+        <li>Standard-Designs</li>
+        <li>Einfache Verwaltung</li>
+      </ul>
+    </div>
+
+    <div class="plan">
+      <h3>🟡 Pro</h3>
+      <p>14,99 € / Monat</p>
+      <ul>
+        <li>Bis zu 50 QR-Codes</li>
+        <li>Alle Design-Stile</li>
+        <li>Logo- und Farboptionen</li>
+      </ul>
+    </div>
+
+    <div class="plan">
+      <h3>🔵 Business</h3>
+      <p>29,99 € / Monat</p>
+      <ul>
+        <li>Bis zu 250 QR-Codes</li>
+        <li>API-Zugang</li>
+        <li>Teamverwaltung</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+.billing-container {
+  max-width: 850px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  font-family: "Inter", system-ui, sans-serif;
+}
+h1 { text-align:center; color:#0d2a78; margin-bottom:.5rem; }
+.subtitle { text-align:center; color:#475569; margin-bottom:2rem; }
+.billing-card {
+  background:#f9fafb; padding:1.5rem; border-radius:12px; margin-bottom:2rem;
+}
+.status.active { color:#16a34a; font-weight:600; }
+.status.cancelled { color:#dc2626; font-weight:600; }
+.status.pending { color:#eab308; font-weight:600; }
+.buttons { margin-top:1rem; display:flex; gap:1rem; }
+.btn {
+  display:inline-block; padding:.7rem 1.4rem; border-radius:8px; text-decoration:none; font-weight:600;
+}
+.btn.primary { background:#0d2a78; color:white; }
+.btn.primary:hover { background:#1e3a8a; }
+.btn.danger { background:#dc2626; color:white; }
+.btn.danger:hover { background:#b91c1c; }
+.plans {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem;
+}
+.plan {
+  background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:1rem; text-align:center;
+}
+.plan h3 { color:#0d2a78; }
+.plan p { font-weight:600; margin:.5rem 0; }
+.plan ul { list-style:none; padding:0; color:#475569; font-size:.95rem; }
+.plan li { margin:.3rem 0; }
+</style>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Team Workspaces{% endblock %}
+{% block content %}
+<section class="qr-generator" style="max-width:980px;">
+  <h1>👥 Team Workspaces & Freigaben</h1>
+
+  <div class="qr-form">
+    <h2>Neuen Workspace erstellen</h2>
+    <form method="post" action="/team/workspaces/create">
+      <label>Name *</label><input type="text" name="name" required>
+      <label>Beschreibung</label><input type="text" name="description">
+      <button class="btn-primary" type="submit">Workspace erstellen</button>
+    </form>
+  </div>
+
+  <div class="qr-form">
+    <h2>Meine Workspaces</h2>
+    {% if owned %}
+      <ul>
+      {% for w in owned %}
+        <li><strong>{{ w.name }}</strong> (Owner)
+          <form method="post" action="/team/workspaces/{{ w.id }}/members/add" style="margin-top:.5rem;">
+            <input type="email" name="email" placeholder="user@email.com" required>
+            <select name="role"><option>viewer</option><option>editor</option><option>admin</option></select>
+            <button type="submit" class="btn-secondary">Mitglied hinzufügen</button>
+          </form>
+          <form method="post" action="/team/workspaces/{{ w.id }}/qrs/assign" style="margin-top:.4rem;">
+            <select name="qr_slug" required>
+              <option value="">QR waehlen</option>
+              {% for qr in my_qrs %}
+                <option value="{{ qr.slug }}">{{ qr.title or ('QR ' ~ qr.slug) }} ({{ qr.type }})</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn-secondary">QR zuordnen</button>
+          </form>
+        </li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p>Keine eigenen Workspaces.</p>
+    {% endif %}
+  </div>
+
+  <div class="qr-form">
+    <h2>Mitglied in Workspaces</h2>
+    {% if member_of %}
+      <ul>
+      {% for w in member_of %}
+        <li><strong>{{ w.name }}</strong> – Rolle: {{ role_map.get(w.id, 'viewer') }}</li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p>Keine Mitgliedschaften.</p>
+    {% endif %}
+  </div>
+
+  <div class="qr-form">
+    <h2>QR direkt freigeben</h2>
+    <form method="post" action="/team/share">
+      <label>QR</label>
+      <select name="qr_slug" required>
+        <option value="">QR waehlen</option>
+        {% for qr in my_qrs %}
+          <option value="{{ qr.slug }}">{{ qr.title or ('QR ' ~ qr.slug) }} ({{ qr.type }})</option>
+        {% endfor %}
+      </select>
+      <label>Ziel-E-Mail</label><input type="email" name="user_email" required>
+      <label>Rolle</label>
+      <select name="role"><option>viewer</option><option>editor</option><option>admin</option></select>
+      <button class="btn-primary" type="submit">Freigeben</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

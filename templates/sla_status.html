@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}SLA Monitoring{% endblock %}
+{% block content %}
+<section class="qr-generator" style="max-width:1100px;">
+  <h1>📈 SLA & Link Health</h1>
+  {% if checked %}<div class="alert success">Check-Lauf beendet. Geprüft: {{ checked }}</div>{% endif %}
+
+  <div class="qr-form" style="display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+    <div><strong>Uptime:</strong> {{ uptime }}%</div>
+    <div><strong>Ø Latenz:</strong> {{ avg_latency }} ms</div>
+    <form method="post" action="/sla/check"><button class="btn-primary" type="submit">Jetzt prüfen</button></form>
+  </div>
+
+  <div class="qr-form">
+    <h2>Letzte Health Checks</h2>
+    <div style="overflow:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr><th style="text-align:left;">Zeit</th><th style="text-align:left;">URL</th><th>Status</th><th>Latenz</th><th>OK</th><th>Fehler</th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td>{{ r.checked_at }}</td>
+            <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.target_url }}</td>
+            <td>{{ r.status_code or '-' }}</td>
+            <td>{{ r.response_time_ms or '-' }} ms</td>
+            <td>{{ '✅' if r.ok else '❌' }}</td>
+            <td>{{ r.error or '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

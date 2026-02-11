@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}📋 Meine QR-Codes – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-list">
+  <h1>📋 Alle gespeicherten QR-Codes</h1>
+  <p class="subtitle">Hier findest du alle QR-Codes, die du erstellt hast.</p>
+
+  {% if products %}
+  <table class="qr-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>QR-Code</th>
+        <th>Produkt</th>
+        <th>Preis</th>
+        <th>Link</th>
+        <th>Aktionen</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td>{{ p.id }}</td>
+
+        <td>
+          {% if p.qr_image %}
+            <img src="/{{ p.qr_image }}" class="qr-thumb" alt="QR Code">
+          {% endif %}
+        </td>
+
+        <td>{{ p.name }}</td>
+        <td>{{ p.price }} €</td>
+
+        <td>
+          {% if p.dynamic_url %}
+            <a href="{{ p.dynamic_url }}" target="_blank">
+              {{ p.dynamic_url }}
+            </a>
+          {% endif %}
+        </td>
+
+        <td>
+          <a href="/qr/product/v/{{ p.public_id }}" class="btn-edit">👁️ Anzeigen</a>
+          <a href="/{{ p.qr_image }}" download class="btn-download">⬇️ Download</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+    <p>🕳️ Keine QR-Codes vorhanden.</p>
+  {% endif %}
+</section>
+
+<style>
+.qr-list {
+  max-width: 1000px;
+  margin: 2rem auto;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  font-family: "Inter", sans-serif;
+  text-align: center;
+}
+.subtitle {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+.qr-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.qr-table th, .qr-table td {
+  padding: 0.8rem;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+  vertical-align: middle;
+}
+.qr-table th {
+  background: #f3f6ff;
+  color: #0D2A78;
+}
+.qr-thumb {
+  width: 80px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.btn-edit, .btn-download {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0.2rem;
+}
+.btn-edit {
+  background: #0D2A78;
+  color: #fff;
+}
+.btn-download {
+  background: #28a745;
+  color: #fff;
+}
+.btn-edit:hover { background: #09215d; }
+.btn-download:hover { background: #1e7a35; }
+</style>
+{% endblock %}

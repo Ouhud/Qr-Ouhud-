@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}♻️ Bild aktualisiert – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-update-section">
+  <h1>♻️ Bild erfolgreich aktualisiert</h1>
+  <p class="subtitle">
+    Dein neues Bild wurde gespeichert. Der QR-Code bleibt weiterhin gültig.
+  </p>
+
+  <div class="update-info">
+    <p><strong>{{ title }}</strong></p>
+    <p>📁 Neue Datei: {{ file_name }}</p>
+    <p><a href="{{ image_url }}" target="_blank" class="btn-link">🖼️ Neues Bild ansehen</a></p>
+  </div>
+</section>
+
+<style>
+.qr-update-section {
+  max-width: 700px;
+  margin: 3rem auto;
+  background: #fff;
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+  text-align: center;
+  font-family: "Inter", system-ui, sans-serif;
+}
+h1 {color:#0D2A78;font-size:1.8rem;margin-bottom:1rem;}
+.subtitle {color:#475569;margin-bottom:2rem;}
+.btn-link {
+  display:inline-block;
+  margin:0.5rem;
+  padding:0.75rem 1.2rem;
+  background:linear-gradient(135deg,#0D2A78,#1E40AF);
+  color:white;
+  text-decoration:none;
+  border-radius:10px;
+  font-weight:600;
+  transition:background .3s ease;
+}
+.btn-link:hover {background:linear-gradient(135deg,#0B1742,#1E3A8A);}
+</style>
+{% endblock %}

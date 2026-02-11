@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}🔗 Multi-Link-QR-Code – Ouhud QR{% endblock %}
+
+{% block content %}
+<section class="qr-generator">
+  <div class="container text-center">
+    <h1>🔗 Multi-Link-QR-Code</h1>
+    <p class="subtitle">
+      Erstelle einen QR-Code, der zu einer Seite mit mehreren Links führt – ideal für Social-Media-Profile oder Portfolios.
+    </p>
+
+    <form method="post" action="/qr/multilink/generate" enctype="multipart/form-data" class="qr-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="link1">🌍 Hauptlink</label>
+          <input type="url" id="link1" name="link1" placeholder="https://deine-seite.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="link2">📸 Zweiter Link</label>
+          <input type="url" id="link2" name="link2" placeholder="https://instagram.com/deinprofil">
+        </div>
+
+        <div class="form-group">
+          <label for="link3">💼 Dritter Link</label>
+          <input type="url" id="link3" name="link3" placeholder="https://linkedin.com/in/deinname">
+        </div>
+
+        <div class="form-group">
+          <label for="link4">💬 Vierter Link</label>
+          <input type="url" id="link4" name="link4" placeholder="https://t.me/deinuser">
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      {% include "partials/qr_style_selector.html" %}
+    </form>
+  </div>
+</section>
+{% endblock %}

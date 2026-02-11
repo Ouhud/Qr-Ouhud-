@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Coupon einlösen{% endblock %}
+{% block content %}
+<section class="qr-generator" style="max-width:760px;">
+  <h1>🎟️ Coupon: {{ data.code }}</h1>
+  <p><strong>Angebot:</strong> {{ data.offer }}</p>
+  <p><strong>Einlösungen:</strong> {{ redemptions }}{% if data.max_redemptions %} / {{ data.max_redemptions }}{% endif %}</p>
+  {% if data.expires_at %}<p><strong>Ablauf:</strong> {{ data.expires_at }}</p>{% endif %}
+
+  {% if request.query_params.get("redeemed") == "1" %}
+    <div class="alert success">✅ Gutschein erfolgreich eingelöst.</div>
+  {% elif request.query_params.get("error") == "expired" %}
+    <div class="alert error">❌ Gutschein ist abgelaufen.</div>
+  {% elif request.query_params.get("error") == "soldout" %}
+    <div class="alert error">❌ Maximale Einlösungen erreicht.</div>
+  {% endif %}
+
+  {% if not expired and not sold_out %}
+  <form method="post" action="/qr/coupon/redeem/{{ qr.slug }}" class="qr-form">
+    <label>Name</label><input type="text" name="name">
+    <label>E-Mail</label><input type="email" name="email">
+    <button class="btn-primary" type="submit">Jetzt einlösen</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}
