@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ data.title or "Multi-Link" }}{% endblock %}
+
+{% block content %}
+<section class="multilink-view text-center">
+  <div class="container">
+    <h1>{{ data.title or "Links" }}</h1>
+    <div class="links">
+      {% if data.link1 %}
+        <p><a href="{{ data.link1 }}" target="_blank" class="btn primary">{{ data.link1 }}</a></p>
+      {% endif %}
+      {% if data.link2 %}
+        <p><a href="{{ data.link2 }}" target="_blank" class="btn primary">{{ data.link2 }}</a></p>
+      {% endif %}
+      {% if data.link3 %}
+        <p><a href="{{ data.link3 }}" target="_blank" class="btn primary">{{ data.link3 }}</a></p>
+      {% endif %}
+      {% if data.link4 %}
+        <p><a href="{{ data.link4 }}" target="_blank" class="btn primary">{{ data.link4 }}</a></p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<style>
+.multilink-view { max-width: 600px; margin: 0 auto; padding: 2rem; }
+.links { display: flex; flex-direction: column; gap: 1rem; }
+.btn { display: inline-block; padding: 0.75rem 1.5rem; background: #0d2a78; color: white; text-decoration: none; border-radius: 8px; }
+.btn:hover { background: #0b1742; }
+</style>
+{% endblock %}

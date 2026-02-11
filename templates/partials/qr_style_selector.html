@@ -118,7 +118,8 @@
         </p>
 
         <label class="toggle">
-          <input type="checkbox" id="dynamicQR" name="dynamicQR" checked>
+          <input type="hidden" id="dynamicQR" name="dynamicQR" value="1">
+          <input type="checkbox" id="dynamicQR_toggle" checked>
           <span class="toggle-slider"></span>
           <span class="toggle-label">Dynamischer QR-Code aktivieren</span>
         </label>
@@ -481,6 +482,15 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.add("active");
       btn.textContent = "✅ Ausgewählt";
     }
+  }
+
+  const dynamicHidden = document.getElementById("dynamicQR");
+  const dynamicToggle = document.getElementById("dynamicQR_toggle");
+  if (dynamicHidden && dynamicToggle) {
+    dynamicHidden.value = dynamicToggle.checked ? "1" : "0";
+    dynamicToggle.addEventListener("change", () => {
+      dynamicHidden.value = dynamicToggle.checked ? "1" : "0";
+    });
   }
 });
 </script>

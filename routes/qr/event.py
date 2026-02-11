@@ -4,8 +4,10 @@
 # =============================================================================
 
 from __future__ import annotations
+import os
 import uuid
 import base64
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -28,6 +30,37 @@ QR_DIR = Path("static/generated_qr")
 QR_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _build_dynamic_url(request: Request, slug: str) -> str:
+    base_url = str(request.base_url).rstrip("/")
+    if "127.0.0.1" in base_url or "localhost" in base_url:
+        return f"{base_url}/d/{slug}"
+    app_domain = os.getenv("APP_DOMAIN", "").rstrip("/")
+    return f"{(app_domain or base_url)}/d/{slug}"
+
+
+def _split_datetime_local(value: str) -> tuple[str, str]:
+    if not value:
+        return "", ""
+    try:
+        dt = datetime.fromisoformat(value)
+        return dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M")
+    except ValueError:
+        if "T" in value:
+            date_part, time_part = value.split("T", 1)
+            return date_part, time_part[:5]
+        return value, ""
+
+
+def _ics_datetime(date_str: str, time_str: str) -> str:
+    if not date_str:
+        return ""
+    compact_date = date_str.replace("-", "")
+    compact_time = (time_str or "00:00").replace(":", "")
+    if len(compact_time) == 4:
+        compact_time = f"{compact_time}00"
+    return f"{compact_date}T{compact_time}"
+
+
 @router.get("/", response_class=HTMLResponse)
 def show_form(request: Request) -> HTMLResponse:
     """Zeigt das Event QR-Formular."""
@@ -40,10 +73,13 @@ async def create_event_qr(
     title: str = Form(...),
     description: str = Form(""),
     location: str = Form(""),
-    start_date: str = Form(...),
+    start: Optional[str] = Form(None),
+    end: Optional[str] = Form(None),
+    start_date: Optional[str] = Form(None),
     start_time: str = Form(""),
-    end_date: str = Form(""),
+    end_date: Optional[str] = Form(None),
     end_time: str = Form(""),
+    dynamicQR: Optional[str] = Form(None),
     style: str = Form("modern"),
     logo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -56,9 +92,16 @@ async def create_event_qr(
     slug = uuid.uuid4().hex[:10]
     logo_fs_path, logo_public_path = save_qr_logo(logo, slug, "event_logo")
     
-    # Datum/Zeit formatieren
-    dtstart = f"{start_date.replace('-', '')}{start_time.replace(':', '')}" if start_date else ""
-    dtend = f"{end_date.replace('-', '')}{end_time.replace(':', '')}" if end_date else ""
+    # Datum/Zeit aus datetime-local oder Fallback-Feldern auflösen
+    if start:
+        start_date, start_time = _split_datetime_local(start)
+    if end:
+        end_date, end_time = _split_datetime_local(end)
+    if not start_date:
+        raise HTTPException(status_code=422, detail="Startdatum fehlt")
+
+    dtstart = _ics_datetime(start_date, start_time)
+    dtend = _ics_datetime(end_date or "", end_time)
     
     # iCal Text generieren
     ics_text = (
@@ -78,11 +121,12 @@ async def create_event_qr(
         ics_text += f"DESCRIPTION:{description}\n"
     ics_text += "END:VEVENT\nEND:VCALENDAR\n"
     
-    # Dynamische URL
-    dynamic_url = f"https://ouhud.com/d/{slug}"
-    
-    # QR-Code generieren
-    payload = ics_text
+    # Dynamik-Option aus Formular (Checkbox)
+    is_dynamic = dynamicQR is not None and str(dynamicQR).lower() not in {"0", "false", "off", "no"}
+    dynamic_url = _build_dynamic_url(request, slug) if is_dynamic else None
+
+    # QR-Code generieren (dynamisch = /d/{slug}, statisch = iCal-Inhalt direkt)
+    payload = dynamic_url or ics_text
     
     style_conf = get_qr_style(style)
     result = generate_qr_png(
@@ -111,6 +155,7 @@ async def create_event_qr(
         type="event",
         dynamic_url=dynamic_url,
         image_path=str(qr_file),
+        is_dynamic=is_dynamic,
         logo_path=logo_public_path,
         style=style,
         title=title,
@@ -125,6 +170,7 @@ async def create_event_qr(
             "start_time": start_time,
             "end_date": end_date,
             "end_time": end_time,
+            "is_dynamic": is_dynamic,
             "logo_path": logo_public_path,
         }
     )

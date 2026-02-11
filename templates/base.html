@@ -45,11 +45,20 @@
     html, body {
       margin: 0;
       padding: 0;
+      height: 100%;
+      box-sizing: border-box;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
       transition: background 0.3s, color 0.3s;
       scroll-behavior: smooth;
+      overscroll-behavior: none;
+    }
+    *, *::before, *::after { box-sizing: inherit; }
+    body.auth-layout {
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
     }
 
     /* === HEADER === */
@@ -89,7 +98,8 @@
     }
 
     /* === SIDEBAR === */
-    aside.sidebar {
+    /* harte Sidebar-Regel: verhindert, dass sie in manchen Seiten in den normalen Fluss faellt */
+    body #sidebar.sidebar {
       position: fixed;
       top: 60px;
       left: 0;
@@ -104,27 +114,36 @@
       z-index: 999;
     }
 
-    .sidebar-inner {
+    body #sidebar .sidebar-inner {
       overflow-y: auto;
+      height: 100%;
       flex: 1;
       padding: 1rem 0;
+      overscroll-behavior-y: contain;
+      scrollbar-gutter: stable;
     }
 
-    .sidebar ul { list-style: none; margin: 0; padding: 0; }
+    body #sidebar ul { list-style: none; margin: 0; padding: 0; }
 
-    .sidebar li {
+    body #sidebar li {
       padding: 0.9rem 1.2rem;
       cursor: pointer;
       transition: background 0.2s;
     }
 
-    .sidebar li:hover { background: rgba(255,255,255,0.15); }
-    .sidebar li.active { background: var(--active); font-weight: 600; }
+    body #sidebar li:hover { background: rgba(255,255,255,0.15); }
+    body #sidebar li.active { background: var(--active); font-weight: 600; }
 
-    .sidebar hr {
-      border: none;
-      border-top: 1px solid var(--border-light);
+    body #sidebar .sidebar-divider {
+      list-style: none;
+      height: 1px;
       margin: 0.6rem 0;
+      padding: 0 !important;
+      background: var(--border-light);
+      cursor: default;
+    }
+    body #sidebar .sidebar-divider:hover {
+      background: var(--border-light);
     }
 
     .sidebar-section-title {
@@ -157,27 +176,24 @@
     /* === MAIN === */
     main.main-content {
       margin-left: 230px;
-      margin-top: 60px;
-      padding: 1.5rem;
+      margin-top: 0;
+      padding: calc(60px + 1.5rem) 1.5rem 1.5rem;
+      min-height: 0;
+      height: 100vh;
+      height: 100dvh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior-y: contain;
       transition: margin-left 0.3s ease;
     }
 
     main.guest-content { margin-top: 60px; padding: 2rem; }
 
-    /* Nur fuer QR-Erstellen-Seiten: Scroll-Chaining vermeiden */
-    body.qr-create-page .sidebar-inner {
-      overscroll-behavior-y: contain;
-      scrollbar-gutter: stable;
-    }
-    body.qr-create-page {
-      overscroll-behavior-y: none;
-    }
-
     /* === RESPONSIVE === */
     @media (max-width: 900px) {
       .menu-toggle { display: block; }
-      .sidebar { transform: translateX(-100%); width: 220px; }
-      .sidebar.show { transform: translateX(0); }
+      body #sidebar.sidebar { transform: translateX(-100%); width: 220px; left: 0; }
+      body #sidebar.sidebar.show { transform: translateX(0); }
       main.main-content { margin-left: 0; }
     }
 
@@ -197,15 +213,17 @@
 
 {% set path = request.url.path %}
 {% set is_qr_create_page = path.startswith('/qr/') and '/edit' not in path and '/v/' not in path and '/update' not in path and '/submit' not in path and '/redeem' not in path and '/list' not in path %}
-<body class="{% if is_qr_create_page %}qr-create-page{% endif %}">
+{% set is_auth_page = path.startswith('/auth/') %}
+{% set show_auth_chrome = request.session.get('user_id') and path != '/' and not is_auth_page %}
+<body class="{% if show_auth_chrome %}auth-layout{% endif %}{% if is_qr_create_page %} qr-create-page{% endif %}">
   <!-- === HEADER === -->
   <header class="header">
-    <a href="{% if request.session.get('user_id') %}/dashboard/{% else %}/{% endif %}" class="logo" aria-label="Zur Startseite">
+    <a href="{% if show_auth_chrome %}/dashboard/{% else %}/{% endif %}" class="logo" aria-label="Zur Startseite">
       <img src="/static/logo.png" alt="Ouhud QR Logo" />
       <span>Ouhud QR</span>
     </a>
 
-    {% if request.session.get('user_id') %}
+    {% if show_auth_chrome %}
     <div style="display:flex; align-items:center;">
       <button class="menu-toggle" aria-label="Menü umschalten" onclick="toggleSidebar()">☰</button>
     </div>
@@ -213,14 +231,14 @@
   </header>
 
   <!-- === SIDEBAR === -->
-  {% if request.session.get('user_id') %}
+  {% if show_auth_chrome %}
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-inner">
       <ul>
         <!-- 📊 Navigation -->
         <li onclick="location.href='/dashboard/'">📊 Dashboard</li>
 
-        <hr>
+        <li class="sidebar-divider" aria-hidden="true"></li>
         <li class="sidebar-section-title">🧩 QR-Code-Typen</li>
 
         <li onclick="location.href='/qr/url/'">🌐 URL</li>
@@ -244,7 +262,7 @@
         <li onclick="location.href='/qr/lead/'">🧾 Lead Formular</li>
         <li onclick="location.href='/qr/feedback/'">📊 Feedback / NPS</li>
         <li onclick="location.href='/qr/coupon/'">🎟️ Gutschein / Coupon</li>
-<hr>
+<li class="sidebar-divider" aria-hidden="true"></li>
 
 <li class="sidebar-section-title">👤 Konto & Verwaltung</li>
 
@@ -295,7 +313,7 @@
   </aside>
   {% endif %}
 
-  <main id="content" class="{% if request.session.get('user_id') %}main-content{% else %}guest-content{% endif %}">
+  <main id="content" class="{% if show_auth_chrome %}main-content{% else %}guest-content{% endif %}">
     {% block content %}{% endblock %}
   </main>
 
@@ -315,6 +333,12 @@
     window.addEventListener("DOMContentLoaded", () => {
       const saved = localStorage.getItem("theme") || "light";
       document.documentElement.setAttribute("data-theme", saved);
+
+      if (document.body.classList.contains("auth-layout")) {
+        document.documentElement.style.overflow = "hidden";
+      } else {
+        document.documentElement.style.overflow = "";
+      }
     });
 
     window.addEventListener("load", () => document.body.classList.add("loaded"));

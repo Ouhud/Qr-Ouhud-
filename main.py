@@ -62,6 +62,7 @@ from routes import auth
 from routes import dashboard
 from routes import qr_base
 from routes import qr_resolve   # für /d/<slug>
+from routes import dyn
 from routes import user_profile
 from routes import settings
 from routes import team
@@ -109,6 +110,7 @@ app.include_router(qr_base.router)
 
 # zentraler Resolver
 app.include_router(qr_resolve.router)
+app.include_router(dyn.router)
 
 # Individual QR Type Routes
 app.include_router(url.router)
@@ -141,8 +143,6 @@ app.include_router(edit_qr.router)
 # -------------------------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    if request.session.get("user_id"):
-        return RedirectResponse("/dashboard/", status_code=303)
     return templates.TemplateResponse("index.html", {"request": request})
 
 # -------------------------------------------------------------------------
