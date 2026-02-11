@@ -117,8 +117,8 @@
           Aktiviere dynamische QR-Codes, die du später anpassen kannst – ohne neue Drucke.
         </p>
 
-        <label class="toggle">
-          <input type="hidden" id="dynamicQR" name="dynamicQR" value="1">
+        <input type="hidden" id="dynamicQR" name="dynamicQR" value="1">
+        <label class="toggle" for="dynamicQR_toggle">
           <input type="checkbox" id="dynamicQR_toggle" checked>
           <span class="toggle-slider"></span>
           <span class="toggle-label">Dynamischer QR-Code aktivieren</span>
@@ -379,10 +379,20 @@ input[type="color"].text-input {
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: 0.6rem;
+  position: relative;
+  cursor: pointer;
 }
-.custom-design .toggle input {
+.custom-design .toggle input[type="checkbox"] {
   position: absolute;
-  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
 }
 .custom-design .toggle-slider {
   width: 46px;
@@ -404,10 +414,10 @@ input[type="color"].text-input {
   transition: transform 0.2s ease;
   box-shadow: 0 1px 4px rgba(2, 6, 23, 0.25);
 }
-.custom-design .toggle input:checked + .toggle-slider {
+.custom-design .toggle input[type="checkbox"]:checked + .toggle-slider {
   background: #2563eb;
 }
-.custom-design .toggle input:checked + .toggle-slider::after {
+.custom-design .toggle input[type="checkbox"]:checked + .toggle-slider::after {
   transform: translateX(20px);
 }
 .custom-design .toggle-label {
@@ -489,7 +499,17 @@ document.addEventListener("DOMContentLoaded", () => {
   if (dynamicHidden && dynamicToggle) {
     dynamicHidden.value = dynamicToggle.checked ? "1" : "0";
     dynamicToggle.addEventListener("change", () => {
+      const mainScroller = document.querySelector("main.main-content");
+      const pageY = window.scrollY;
+      const mainY = mainScroller ? mainScroller.scrollTop : 0;
       dynamicHidden.value = dynamicToggle.checked ? "1" : "0";
+      requestAnimationFrame(() => {
+        if (mainScroller) {
+          mainScroller.scrollTop = mainY;
+        } else {
+          window.scrollTo(0, pageY);
+        }
+      });
     });
   }
 });

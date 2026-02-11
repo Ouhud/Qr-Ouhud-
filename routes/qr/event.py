@@ -122,7 +122,7 @@ async def create_event_qr(
     ics_text += "END:VEVENT\nEND:VCALENDAR\n"
     
     # Dynamik-Option aus Formular (Checkbox)
-    is_dynamic = dynamicQR is not None and str(dynamicQR).lower() not in {"0", "false", "off", "no"}
+    is_dynamic = str(dynamicQR or "0") == "1"
     dynamic_url = _build_dynamic_url(request, slug) if is_dynamic else None
 
     # QR-Code generieren (dynamisch = /d/{slug}, statisch = iCal-Inhalt direkt)

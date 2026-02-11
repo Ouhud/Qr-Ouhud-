@@ -397,9 +397,12 @@ def resolve(slug: str, request: Request, db: Session = Depends(get_db)) -> Respo
     # -------------------------------------------------------------------------
     if qr_type == "multilink":
         html = data.get("public_html")
-        if not html:
-            return PlainTextResponse("Multilink ist leer")
-        return HTMLResponse(html)
+        if html:
+            return HTMLResponse(html)
+        target = data.get("public_url") or data.get("url")
+        if target:
+            return RedirectResponse(_append_utm(str(target), data.get("utm") or {}, qr.slug))
+        return PlainTextResponse("Multilink ist leer")
 
     # -------------------------------------------------------------------------
     # ✅ PAYMENT

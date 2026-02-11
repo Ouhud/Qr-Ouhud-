@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models.qrcode import QRCode
+from routes.qr.dynamic_url import build_dynamic_url
 from routes.qr.logo_utils import save_qr_logo
 from utils.qr_generator import generate_qr_png
 from utils.qr_config import get_qr_style
@@ -56,7 +57,7 @@ async def create_geo_qr(
     geo_url = f"geo:{latitude},{longitude}"
     
     # Dynamische URL
-    dynamic_url = f"https://ouhud.com/d/{slug}"
+    dynamic_url = build_dynamic_url(request, slug)
     
     # QR-Code generieren
     payload = dynamic_url
