@@ -408,8 +408,13 @@ def resolve(slug: str, request: Request, db: Session = Depends(get_db)) -> Respo
     # ✅ PAYMENT
     # -------------------------------------------------------------------------
     if qr_type == "payment":
-        target = data.get("payment_url") or "/"
-        return RedirectResponse(_append_utm(target, data.get("utm") or {}, qr.slug))
+        target = data.get("payment_url")
+        if target:
+            return RedirectResponse(_append_utm(str(target), data.get("utm") or {}, qr.slug))
+        epc_payload = data.get("epc_payload")
+        if epc_payload:
+            return PlainTextResponse(str(epc_payload))
+        return RedirectResponse("/")
 
     # -------------------------------------------------------------------------
     # ✅ PRODUCT

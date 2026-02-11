@@ -38,6 +38,7 @@ from utils.two_factor import (
     qr_data_uri,
     verify_totp,
 )
+from utils.billing_access import is_billing_exempt_user
 
 # -------------------------------------------------------------------------
 # 🔹 Router-Setup & Templates
@@ -160,44 +161,63 @@ def billing_page(
     user=Depends(get_current_user)
 ):
     """Zeigt Abonnementdetails und Rechnungsverlauf an."""
-    plan = "Pro"
-    price = "14,99 € / Monat"
-    status = "Aktiv"
-    next_billing = "05.12.2025"
-    features = [
-        "Bis zu 50 QR-Codes",
-        "3 Monate gratis im Jahr",
-        "API-Zugang inklusive",
-        "24/7 E-Mail-Support"
-    ]
+    current_plan = user.plan
+    plan_name = current_plan.name if current_plan else "Basic"
+    if current_plan and float(current_plan.price or 0) > 0:
+        price = f"{float(current_plan.price):.2f} € / Monat"
+    elif current_plan:
+        price = "Auf Anfrage"
+    else:
+        price = "4,99 € / Monat"
 
-    invoices = [
-        {
-            "date": "05.10.2025",
-            "description": "Ouhud QR Pro-Abo Oktober",
-            "amount": "14,99 €",
-            "status": "Bezahlt",
-            "download_url": "/static/invoices/inv_2025_10.pdf"
-        },
-        {
-            "date": "05.09.2025",
-            "description": "Ouhud QR Pro-Abo September",
-            "amount": "14,99 €",
-            "status": "Bezahlt",
-            "download_url": "/static/invoices/inv_2025_09.pdf"
-        }
-    ]
+    raw_status = str(getattr(user, "plan_status", "active") or "active").lower()
+    billing_exempt = is_billing_exempt_user(user)
+    if billing_exempt:
+        raw_status = "active"
+
+    if raw_status in {"active", "trialing"}:
+        status = "Aktiv"
+    elif raw_status in {"cancelled", "canceled", "unpaid"}:
+        status = "Gekündigt"
+    else:
+        status = "In Bearbeitung"
+
+    expiry = getattr(user, "plan_expiry", None)
+    next_billing = expiry.strftime("%d.%m.%Y") if expiry else None
+    if billing_exempt:
+        next_billing = None
+        price = "0,00 € / Monat (Owner-Zugang)"
+
+    feature_map = {
+        "basic": ["📦 Bis zu 10 QR-Codes", "🎁 1 Monat kostenlos", "🔒 Kein API-Zugang"],
+        "pro": ["📦 Bis zu 50 QR-Codes", "🎁 3 Monate kostenlos", "🎨 Erweitertes Design"],
+        "business": ["📦 Bis zu 250 QR-Codes", "🔗 API-Zugang inklusive", "👥 Team-Funktionen"],
+        "enterprise": ["📦 Unbegrenzt", "🔗 API-Zugang", "🛠️ Individuelle Betreuung"],
+    }
+    features = feature_map.get(plan_name.lower(), feature_map["basic"])
+
+    payment_required = raw_status in {"past_due", "incomplete", "incomplete_expired", "unpaid"}
+    trial_end = next_billing if raw_status == "trialing" else None
+    if billing_exempt:
+        payment_required = False
+        trial_end = None
+
+    # Stripe-Rechnungen könnten später live aus Stripe API geladen werden.
+    invoices: list[dict[str, str]] = []
 
     return templates.TemplateResponse(
         "settings_billing.html",
         {
             "request": request,
             "user": user,
-            "plan": plan,
+            "plan": plan_name,
             "price": price,
             "status": status,
             "next_billing": next_billing,
             "features": features,
+            "payment_required": payment_required,
+            "trial_end": trial_end,
+            "billing_exempt": billing_exempt,
             "invoices": invoices,
         },
     )

@@ -161,6 +161,9 @@ def login_user(
                 status_code=400,
             )
 
+    # 🧹 Alte Session löschen (Schutz vor Session-Fixation)
+    request.session.clear()
+
     # 💾 Benutzer-ID und -Infos speichern
     request.session["user_id"] = user.id
     request.session["user"] = {
@@ -324,6 +327,25 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nicht eingeloggt.")
+
+    session_token = request.session.get("session_token")
+    if not session_token:
+        request.session.clear()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sitzung ungültig.")
+
+    device = (
+        db.query(LoginDevice)
+        .filter(
+            LoginDevice.user_id == user_id,
+            LoginDevice.session_token == session_token,
+            LoginDevice.active == True,
+        )
+        .first()
+    )
+    if not device:
+        request.session.clear()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sitzung abgelaufen.")
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Benutzer nicht gefunden.")

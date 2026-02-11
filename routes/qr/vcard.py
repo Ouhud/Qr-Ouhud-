@@ -365,7 +365,7 @@ async def update_vcard_qr(
     Das QR-Bild bleibt UNVERÄNDERT - es zeigt immer auf /d/{slug}
     🔐 Daten werden verschlüsselt gespeichert.
     """
-    qr = db.query(QRCode).filter(QRCode.id == qr_id).first()
+    qr = db.query(QRCode).filter(QRCode.id == qr_id, QRCode.type == "vcard").first()
     if not qr:
         raise HTTPException(404, "QR nicht gefunden")
     if not can_edit_qr(db, user.id, qr):

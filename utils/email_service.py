@@ -12,6 +12,7 @@ import os
 import smtplib
 import ssl
 import logging
+from datetime import datetime, timezone
 from email.message import EmailMessage
 from dotenv import load_dotenv
 from pathlib import Path
@@ -49,6 +50,7 @@ SUPPORT_TO = os.getenv("SUPPORT_MAIL_TO", "support@ouhud.com")
 
 APP_DOMAIN = os.getenv("APP_DOMAIN", "https://ouhud.com")
 COMPANY_NAME = os.getenv("COMPANY_NAME", "Ouhud GmbH")
+CURRENT_YEAR = datetime.now(timezone.utc).year
 
 # ===============================================================
 # 🪵 Logging konfigurieren
@@ -173,7 +175,7 @@ def send_contact_mail(name: str, email: str, subject: str, message: str):
 
           <hr style="margin:30px 0;border:none;border-top:1px solid #eee;">
           <p style="font-size:12px;color:#888;text-align:center;">
-            © 2025 Ouhud GmbH – All rights reserved.<br>
+            © {CURRENT_YEAR} Ouhud GmbH – All rights reserved.<br>
             <a href="https://ouhud.com" style="color:#0D2A78;text-decoration:none;">ouhud.com</a>
           </p>
         </div>
@@ -214,7 +216,7 @@ def send_contact_mail(name: str, email: str, subject: str, message: str):
 
           <hr style="margin:30px 0;border:none;border-top:1px solid #eee;">
           <p style="font-size:12px;color:#888;text-align:center;">
-            © 2025 Ouhud GmbH – All rights reserved.<br>
+            © {CURRENT_YEAR} Ouhud GmbH – All rights reserved.<br>
             <a href="https://ouhud.com" style="color:#0D2A78;text-decoration:none;">ouhud.com</a>
           </p>
         </div>
@@ -327,7 +329,7 @@ def send_reset_mail(name: str, email: str, reset_link: str):
 
           <hr style="margin:30px 0;border:none;border-top:1px solid #eee;">
           <p style="font-size:12px;color:#888;text-align:center;">
-            © 2025 Ouhud GmbH – All rights reserved.<br>
+            © {CURRENT_YEAR} Ouhud GmbH – All rights reserved.<br>
             <a href="https://ouhud.com" style="color:#0D2A78;text-decoration:none;">ouhud.com</a>
           </p>
         </div>

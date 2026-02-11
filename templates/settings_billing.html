@@ -22,10 +22,17 @@
   <!-- ✅ STRIPE FEEDBACK -->
   {% if request.query_params.get('status') == 'success' %}
     <div class="alert success">✅ Zahlung erfolgreich – dein Plan wurde aktualisiert.</div>
+    {% if request.query_params.get('sync') == '1' %}
+      <div class="alert info">ℹ️ Plan-Synchronisierung erfolgreich abgeschlossen.</div>
+    {% elif request.query_params.get('sync') == '0' %}
+      <div class="alert warn">⚠️ Zahlung ist erfolgreich, Plan-Sync läuft im Hintergrund per Webhook.</div>
+    {% endif %}
   {% elif request.query_params.get('status') == 'cancelled' %}
     <div class="alert error">❌ Zahlung abgebrochen.</div>
   {% elif request.query_params.get('msg') == 'cancelled' %}
     <div class="alert info">ℹ️ Dein Abonnement wurde beendet.</div>
+  {% elif request.query_params.get('msg') == 'owner_exempt' %}
+    <div class="alert info">ℹ️ Owner-Konto: keine Abrechnung aktiv.</div>
   {% endif %}
 
   <!-- ✅ DEIN PLAN -->
@@ -51,22 +58,26 @@
 
       <div class="btn-column">
 
-        {% if payment_required %}
+        {% if payment_required and not billing_exempt %}
         <a class="btn-primary small w-full" href="/billing/pay-now">
           <i class="bi bi-receipt"></i> Jetzt bezahlen
         </a>
         {% endif %}
 
-        {% if plan != "Enterprise" %}
+        {% if plan != "Enterprise" and not billing_exempt %}
         <a class="btn-outline-success small w-full" href="/billing/upgrade/{{ plan|lower }}">
           <i class="bi bi-chevron-double-up"></i> Upgrade / Downgrade
         </a>
         {% endif %}
 
-        {% if status == "Aktiv" %}
+        {% if status == "Aktiv" and not billing_exempt %}
         <a class="btn-outline-danger small w-full" href="/billing/cancel">
           <i class="bi bi-x-circle"></i> Abo kündigen
         </a>
+        {% endif %}
+
+        {% if billing_exempt %}
+        <span class="badge success">Owner-Zugang (ohne Abrechnung)</span>
         {% endif %}
 
       </div>
@@ -89,7 +100,9 @@
           <li>🎁 1 Monat kostenlos</li>
           <li>🔒 Kein API-Zugang</li>
         </ul>
+        {% if not billing_exempt %}
         <a href="/billing/upgrade/basic" class="btn-primary w-full small">Jetzt starten</a>
+        {% endif %}
       </div>
 
       <!-- PRO -->
@@ -101,7 +114,9 @@
           <li>🎁 3 Monate kostenlos</li>
           <li>🔒 Kein API-Zugang</li>
         </ul>
+        {% if not billing_exempt %}
         <a href="/billing/upgrade/pro" class="btn-primary w-full small">Jetzt starten</a>
+        {% endif %}
       </div>
 
       <!-- BUSINESS -->
@@ -113,7 +128,9 @@
           <li>🎁 6 Monate kostenlos</li>
           <li>🔗 API-Zugang inklusive</li>
         </ul>
+        {% if not billing_exempt %}
         <a href="/billing/upgrade/business" class="btn-primary w-full small">Jetzt starten</a>
+        {% endif %}
       </div>
 
       <!-- ENTERPRISE -->
@@ -124,7 +141,9 @@
           <li>📦 Bis zu 999999 QR-Codes</li>
           <li>🔗 API-Zugang inklusive</li>
         </ul>
+        {% if not billing_exempt %}
         <a href="/contact?topic=enterprise" class="btn-primary w-full small">Kontakt aufnehmen</a>
+        {% endif %}
       </div>
 
     </div>

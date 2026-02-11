@@ -124,7 +124,7 @@ def edit_qr(
     user=Depends(get_current_user),
 ) -> HTMLResponse:
     """Zeigt das Bearbeitungsformular für einen URL QR-Code."""
-    qr = db.query(QRCode).filter(QRCode.id == qr_id).first()
+    qr = db.query(QRCode).filter(QRCode.id == qr_id, QRCode.type == "url").first()
     if not qr:
         raise HTTPException(404, "QR nicht gefunden")
     if not can_edit_qr(db, user.id, qr):
@@ -146,7 +146,7 @@ async def update_url_qr(
     Das QR-Bild bleibt UNVERÄNDERT - es zeigt immer auf /d/{slug}
     🔐 Daten werden verschlüsselt gespeichert.
     """
-    qr = db.query(QRCode).filter(QRCode.id == qr_id).first()
+    qr = db.query(QRCode).filter(QRCode.id == qr_id, QRCode.type == "url").first()
     if not qr:
         raise HTTPException(404, "QR nicht gefunden")
     if not can_edit_qr(db, user.id, qr):

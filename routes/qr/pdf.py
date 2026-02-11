@@ -164,7 +164,7 @@ async def update_pdf_qr(
     user=Depends(get_current_user),
 ) -> HTMLResponse:
     """Aktualisiert einen PDF QR-Code. 🔐 Daten werden verschlüsselt gespeichert."""
-    qr = db.query(QRCode).filter(QRCode.id == qr_id).first()
+    qr = db.query(QRCode).filter(QRCode.id == qr_id, QRCode.type == "pdf").first()
     if not qr:
         raise HTTPException(404, "QR nicht gefunden")
     if not can_edit_qr(db, user.id, qr):

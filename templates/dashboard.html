@@ -19,8 +19,8 @@
       <p>Gesamte Scans</p>
     </div>
     <div class="card">
-      <h2>{{ active_campaigns }}</h2>
-      <p>Aktive Kampagnen</p>
+      <h2>{{ active_qr_codes }}</h2>
+      <p>Aktive QR-Codes</p>
     </div>
     <div class="card">
       <h2>{{ scans_today }}</h2>
@@ -31,6 +31,18 @@
   <!-- === CHARTS === -->
   <div class="chart-grid">
     <div class="chart-card">
+      <h3>💼 Abo & QR-Limit ({{ plan_display_name }})</h3>
+      <p class="usage-meta">
+        Verwendet: <strong>{{ qr_usage }}</strong> / {{ qr_limit }} |
+        Verfügbar: <strong>{{ qr_remaining }}</strong> |
+        Auslastung: <strong>{{ qr_usage_percent_label }}</strong>
+      </p>
+      <div class="chart-canvas chart-canvas-usage">
+        <canvas id="usageChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
       <div class="chart-header">
         <h3>📈 Scans ({{ range_title }})</h3>
         <div class="range-filter">
@@ -39,22 +51,47 @@
           <a href="/dashboard/?range=6m" class="{% if range_key == '6m' %}active{% endif %}">6 Monate</a>
         </div>
       </div>
-      <canvas id="scansChart"></canvas>
+      <div class="chart-canvas chart-canvas-scans">
+        <canvas id="scansChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>🧭 Conversion-Funnel</h3>
+      <p class="usage-meta">
+        Conversion-Rate (Visits → Conversions): <strong>{{ conversion_rate_label }}</strong>
+      </p>
+      <div class="chart-canvas chart-canvas-funnel">
+        <canvas id="funnelChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>🔝 Top 10 QR-Codes (Scans)</h3>
+      <div class="chart-canvas chart-canvas-top">
+        <canvas id="topQrChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card chart-card-wide">
+      <h3>🔥 Scan-Heatmap (Tag × Stunde)</h3>
+      <div class="chart-canvas chart-canvas-heatmap">
+        <canvas id="heatmapChart"></canvas>
+      </div>
     </div>
 
     <div class="chart-card">
       <h3>📊 Verteilung der QR-Typen</h3>
-      <canvas id="typeChart"></canvas>
+      <div class="chart-canvas chart-canvas-pie">
+        <canvas id="typeChart"></canvas>
+      </div>
     </div>
 
     <div class="chart-card">
       <h3>📱 Geräteverteilung</h3>
-      <canvas id="deviceChart"></canvas>
-    </div>
-
-    <div class="chart-card">
-      <h3>💼 QR-Code-Nutzung ({{ plan_name }})</h3>
-      <canvas id="usageChart"></canvas>
+      <div class="chart-canvas chart-canvas-pie">
+        <canvas id="deviceChart"></canvas>
+      </div>
     </div>
   </div>
 
@@ -84,7 +121,14 @@
 
 <!-- === 📊 Chart.js === -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2"></script>
 <script>
+const baseChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 450 }
+};
+
 /* === LINE CHART: Scans Zeitraum === */
 new Chart(document.getElementById("scansChart"), {
   type: 'line',
@@ -101,8 +145,12 @@ new Chart(document.getElementById("scansChart"), {
     }]
   },
   options: {
+    ...baseChartOptions,
     plugins:{ legend:{ display:false }},
-    scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+    scales:{
+      x:{ ticks:{ autoSkip:true, maxRotation:0 } },
+      y:{ beginAtZero:true, ticks:{ precision:0 } }
+    }
   }
 });
 
@@ -120,7 +168,157 @@ new Chart(document.getElementById("typeChart"), {
       borderWidth: 0
     }]
   },
-  options: { plugins:{ legend:{ position:"bottom" } } }
+  options: {
+    ...baseChartOptions,
+    plugins:{ legend:{ position:"bottom" } }
+  }
+});
+
+/* === BAR CHART: Top 10 QR === */
+new Chart(document.getElementById("topQrChart"), {
+  type: "bar",
+  data: {
+    labels: {{ (top_qr_labels or []) | tojson }},
+    datasets: [
+      {
+        label: "Aktueller Zeitraum",
+        data: {{ (top_qr_current or []) | tojson }},
+        backgroundColor: "#2563EB",
+        borderRadius: 8,
+      },
+      {
+        label: "Vorzeitraum",
+        data: {{ (top_qr_previous or []) | tojson }},
+        backgroundColor: "#93c5fd",
+        borderRadius: 8,
+      },
+    ],
+  },
+  options: {
+    ...baseChartOptions,
+    indexAxis: "y",
+    plugins: {
+      legend: { position: "bottom" },
+      tooltip: {
+        callbacks: {
+          afterBody: function(context) {
+            const idx = context[0]?.dataIndex ?? 0;
+            const deltas = {{ (top_qr_delta_pct or []) | tojson }};
+            const delta = deltas[idx] ?? 0;
+            const sign = delta > 0 ? "+" : "";
+            return `Trend vs. Vorzeitraum: ${sign}${delta}%`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: { beginAtZero: true, ticks: { precision: 0 } },
+      y: {
+        ticks: {
+          callback: function(value) {
+            const label = String(this.getLabelForValue(value) || "");
+            return label.length > 22 ? `${label.slice(0, 22)}...` : label;
+          }
+        }
+      }
+    }
+  }
+});
+
+/* === MATRIX CHART: Heatmap Tag × Stunde === */
+const heatmapData = {{ (heatmap_points or []) | tojson }};
+const heatmapMax = {{ heatmap_max or 1 }};
+const heatmapDayLabels = {{ (heatmap_day_labels or []) | tojson }};
+
+try {
+  new Chart(document.getElementById("heatmapChart"), {
+    type: "matrix",
+    data: {
+      datasets: [{
+        label: "Scans",
+        data: heatmapData,
+        width: ({ chart }) => {
+          const area = chart.chartArea || { width: 600 };
+          return Math.max(8, (area.width / 24) - 1);
+        },
+        height: ({ chart }) => {
+          const area = chart.chartArea || { height: 220 };
+          return Math.max(14, (area.height / 7) - 1);
+        },
+        backgroundColor: (ctx) => {
+          const value = Number(ctx.raw?.v || 0);
+          if (!value) return "rgba(226,232,240,0.6)";
+          const alpha = Math.min(0.95, 0.15 + (value / Math.max(1, heatmapMax)) * 0.8);
+          return `rgba(37,99,235,${alpha})`;
+        },
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      ...baseChartOptions,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => {
+              const p = items?.[0]?.raw || {};
+              const day = heatmapDayLabels[p.y] || "";
+              const hour = String(p.x ?? 0).padStart(2, "0");
+              return `${day} ${hour}:00`;
+            },
+            label: (item) => `Scans: ${item.raw?.v || 0}`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: "linear",
+          min: -0.5,
+          max: 23.5,
+          ticks: {
+            stepSize: 1,
+            callback: function(v) {
+              const w = this?.chart?.width || 900;
+              const step = w < 520 ? 6 : (w < 760 ? 4 : 3);
+              return v % step === 0 ? `${String(v).padStart(2, "0")}:00` : "";
+            }
+          },
+          grid: { display: false }
+        },
+        y: {
+          type: "linear",
+          min: -0.5,
+          max: 6.5,
+          ticks: {
+            stepSize: 1,
+            callback: (v) => heatmapDayLabels[v] || ""
+          },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+} catch (e) {
+  console.warn("Heatmap konnte nicht gerendert werden:", e);
+}
+
+/* === FUNNEL (Bar) === */
+new Chart(document.getElementById("funnelChart"), {
+  type: "bar",
+  data: {
+    labels: {{ (funnel_labels or []) | tojson }},
+    datasets: [{
+      data: {{ (funnel_values or []) | tojson }},
+      backgroundColor: ["#1d4ed8", "#2563EB", "#10b981"],
+      borderRadius: 10,
+    }]
+  },
+  options: {
+    ...baseChartOptions,
+    indexAxis: "y",
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+  }
 });
 
 /* === PIE CHART: Geräte === */
@@ -134,7 +332,10 @@ new Chart(document.getElementById("deviceChart"), {
       borderWidth: 0
     }]
   },
-  options: { plugins:{ legend:{ position:"bottom" } } }
+  options: {
+    ...baseChartOptions,
+    plugins:{ legend:{ position:"bottom" } }
+  }
 });
 
 /* === PROGRESS CHART: QR-Limit Nutzung === */
@@ -149,6 +350,7 @@ new Chart(document.getElementById("usageChart"), {
     }]
   },
   options: {
+    ...baseChartOptions,
     cutout: "70%",
     plugins:{
       legend:{ display:false },
@@ -217,7 +419,7 @@ new Chart(document.getElementById("usageChart"), {
 /* === CHART-GRID === */
 .chart-grid {
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
   gap:1.5rem;
   margin-bottom:2.5rem;
 }
@@ -227,10 +429,33 @@ new Chart(document.getElementById("usageChart"), {
   box-shadow:0 3px 10px rgba(0,0,0,0.05);
   padding:1.2rem;
 }
+.chart-card-wide {
+  grid-column: span 2;
+}
 .chart-card h3 {
   color:var(--primary);
   font-size:1rem;
   margin-bottom:.4rem;
+}
+.chart-canvas {
+  position: relative;
+  width: 100%;
+}
+.chart-canvas canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.chart-canvas-usage { height: 250px; }
+.chart-canvas-scans { height: 300px; }
+.chart-canvas-funnel { height: 250px; }
+.chart-canvas-top { height: 320px; }
+.chart-canvas-heatmap { height: 320px; }
+.chart-canvas-pie { height: 280px; }
+.usage-meta {
+  margin:0 0 .8rem;
+  color:var(--muted);
+  font-size:.92rem;
 }
 .chart-header {
   display:flex;
@@ -243,6 +468,7 @@ new Chart(document.getElementById("usageChart"), {
   display:flex;
   align-items:center;
   gap:.35rem;
+  flex-wrap: wrap;
 }
 .range-filter a {
   text-decoration:none;
@@ -289,12 +515,49 @@ th,td {
 }
 tbody tr:hover { background:#f9fafb; }
 
+/* === SPLIT-SCREEN / HALBE DESKTOP-BREITE === */
+@media (max-width:1280px) {
+  .dashboard {
+    max-width: 100%;
+    padding: 1.25rem;
+  }
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+  .chart-card-wide {
+    grid-column: span 1;
+  }
+  .chart-canvas-usage { height: 230px; }
+  .chart-canvas-scans { height: 260px; }
+  .chart-canvas-funnel { height: 230px; }
+  .chart-canvas-top { height: 300px; }
+  .chart-canvas-heatmap { height: 280px; }
+  .chart-canvas-pie { height: 250px; }
+}
+
 /* === RESPONSIVE === */
 @media (max-width:768px) {
   .dashboard { padding:1rem; }
   .chart-grid { grid-template-columns:1fr; }
+  .chart-card-wide { grid-column: span 1; }
+  .chart-card { padding:1rem; }
+  .chart-canvas-usage { height: 220px; }
+  .chart-canvas-scans { height: 260px; }
+  .chart-canvas-funnel { height: 220px; }
+  .chart-canvas-top { height: 280px; }
+  .chart-canvas-heatmap { height: 260px; }
+  .chart-canvas-pie { height: 240px; }
   table { font-size:.85rem; }
   .chart-header { flex-direction:column; align-items:flex-start; }
+}
+@media (max-width:480px) {
+  .dashboard-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .card h2 { font-size:1.55rem; }
+  .card p { font-size:.85rem; }
+  .range-filter { flex-wrap:wrap; }
+  .range-filter a { font-size:.75rem; }
 }
 </style>
 {% endblock %}

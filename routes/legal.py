@@ -10,10 +10,11 @@
 # Projekt: Ouhud GmbH – Ouhud QR
 # =============================================================================
 
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from datetime import datetime
+from utils.email_service import send_contact_mail
 
 # 🔹 Templates-Verzeichnis definieren
 templates = Jinja2Templates(directory="templates")
@@ -88,12 +89,54 @@ def kontakt(request: Request):
     )
 
 
+@router.get("/contact", response_class=HTMLResponse)
+def contact_alias(request: Request, topic: str = ""):
+    """Englischer Alias für die Kontaktseite inkl. Topic-Vorbelegung."""
+    normalized_topic = (topic or "").strip().lower()
+    prefill_subject = ""
+    prefill_message = ""
+
+    if normalized_topic == "enterprise":
+        prefill_subject = "Enterprise-Anfrage"
+        prefill_message = (
+            "Guten Tag Ouhud Team,\n\n"
+            "wir interessieren uns für den Enterprise-Tarif.\n"
+            "Bitte senden Sie uns ein individuelles Angebot inkl. API-Zugang und Onboarding.\n\n"
+            "Unternehmen:\n"
+            "Ansprechpartner:\n"
+            "Gewünschter Start:\n\n"
+            "Vielen Dank."
+        )
+    elif normalized_topic == "api-access":
+        prefill_subject = "Anfrage API-Zugang"
+        prefill_message = (
+            "Guten Tag Ouhud Team,\n\n"
+            "wir möchten den API-Zugang für unser Projekt anfragen.\n\n"
+            "Use-Case:\n"
+            "Gewünschte Integrationen:\n"
+            "Geschätztes Volumen:\n\n"
+            "Vielen Dank."
+        )
+
+    return templates.TemplateResponse(
+        "kontakt.html",
+        {
+            "request": request,
+            "current_year": datetime.now().year,
+            "prefill_subject": prefill_subject,
+            "prefill_message": prefill_message,
+            "contact_topic": normalized_topic,
+        },
+    )
+
+
 # ---------------------------------------------------------------------
 # 📩 Kontaktformular (POST)
 # ---------------------------------------------------------------------
 @router.post("/contact", response_class=HTMLResponse)
 async def contact_submit(
     request: Request,
+    background_tasks: BackgroundTasks,
     name: str = Form(...),
     email: str = Form(...),
     subject: str = Form(""),
@@ -105,7 +148,7 @@ async def contact_submit(
     Später kann hier eine E-Mail-Funktion (SMTP) integriert werden.
     """
     try:
-        # 💬 Log in Konsole (Testausgabe)
+        # 💬 Log in Konsole
         print("──────────────────────────────────────────")
         print(f"📨 Neue Kontaktanfrage:")
         print(f"👤 Name: {name}")
@@ -114,12 +157,17 @@ async def contact_submit(
         print(f"💬 Nachricht:\n{message}")
         print("──────────────────────────────────────────")
 
+        # 📬 Professioneller E-Mail-Versand (Admin + Auto-Reply)
+        background_tasks.add_task(send_contact_mail, name, email, subject, message)
+
         # ✅ Erfolgsmeldung anzeigen
         return templates.TemplateResponse(
             "kontakt.html",
             {
                 "request": request,
                 "success": True,
+                "prefill_subject": "",
+                "prefill_message": "",
                 "current_year": datetime.now().year
             }
         )

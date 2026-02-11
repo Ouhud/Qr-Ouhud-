@@ -6,6 +6,7 @@
 from __future__ import annotations
 import uuid
 import base64
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -29,6 +30,47 @@ QR_DIR = Path("static/generated_qr")
 QR_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _normalize_amount(value: str) -> str:
+    raw = (value or "").strip().replace(",", ".")
+    if not raw:
+        return ""
+    try:
+        return f"{float(raw):.2f}"
+    except ValueError:
+        return ""
+
+
+def _build_epc_payload(
+    recipient: str,
+    iban: str,
+    amount: str,
+    currency: str,
+    purpose: str,
+) -> str:
+    """
+    Einfaches EPC/SCT-Format (SEPA-QR-Text).
+    """
+    clean_iban = re.sub(r"\\s+", "", (iban or "").upper())
+    norm_amount = _normalize_amount(amount)
+    ccy = (currency or "EUR").upper()
+    amount_line = f"{ccy}{norm_amount}" if norm_amount else ""
+
+    lines = [
+        "BCD",
+        "002",
+        "1",
+        "SCT",
+        "",  # BIC optional
+        (recipient or "").strip(),
+        clean_iban,
+        amount_line,
+        "",  # Purpose Code optional
+        (purpose or "").strip(),
+        "",  # Ref optional
+    ]
+    return "\n".join(lines)
+
+
 @router.get("/", response_class=HTMLResponse)
 def show_form(request: Request) -> HTMLResponse:
     """Zeigt das Payment QR-Formular."""
@@ -38,11 +80,14 @@ def show_form(request: Request) -> HTMLResponse:
 @router.post("/generate", response_class=HTMLResponse)
 async def create_payment_qr(
     request: Request,
-    payment_url: str = Form(...),
-    title: str = Form(...),
+    payment_url: str = Form(""),
+    title: str = Form(""),
     description: str = Form(""),
     amount: str = Form(""),
     currency: str = Form("EUR"),
+    recipient: str = Form(""),
+    iban: str = Form(""),
+    purpose: str = Form(""),
     style: str = Form("ouhud"),
     logo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -55,6 +100,23 @@ async def create_payment_qr(
     slug = uuid.uuid4().hex[:10]
     logo_fs_path, logo_public_path = save_qr_logo(logo, slug, "payment_logo")
     
+    payment_url = (payment_url or "").strip()
+    recipient = (recipient or "").strip()
+    iban = (iban or "").strip()
+    purpose = (purpose or "").strip()
+    norm_amount = _normalize_amount(amount)
+
+    # Wenn kein Payment-Link vorhanden ist, versuche EPC-Daten zu bauen
+    epc_payload = ""
+    if not payment_url and recipient and iban:
+        epc_payload = _build_epc_payload(recipient, iban, norm_amount, currency, purpose)
+
+    if not payment_url and not epc_payload:
+        raise HTTPException(
+            status_code=400,
+            detail="Bitte entweder eine Payment-URL oder Empfänger + IBAN angeben.",
+        )
+
     # Dynamische URL
     dynamic_url = build_dynamic_url(request, slug)
     
@@ -80,6 +142,8 @@ async def create_payment_qr(
         f.write(qr_bytes)
     
     # In DB speichern
+    display_title = (title or "").strip() or (f"SEPA Zahlung: {recipient}" if recipient else "Payment")
+
     qr = QRCode(
         user_id=user_id,
         slug=slug,
@@ -88,14 +152,18 @@ async def create_payment_qr(
         image_path=str(qr_file),
         logo_path=logo_public_path,
         style=style,
-        title=title,
+        title=display_title,
     )
     qr.set_data(
         {
             "payment_url": payment_url,
-            "title": title,
+            "recipient": recipient,
+            "iban": iban,
+            "purpose": purpose,
+            "epc_payload": epc_payload,
+            "title": display_title,
             "description": description,
-            "amount": amount,
+            "amount": norm_amount,
             "currency": currency,
             "logo_path": logo_public_path,
         }

@@ -6,16 +6,18 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
+from sqlalchemy.orm import Session
 
 from dotenv import load_dotenv
 from typing import List, Dict
 
-from database import engine
+from database import engine, get_db
+from models.plan import Plan
 from utils.two_factor import ensure_2fa_columns
 from utils.login_devices import ensure_login_devices_table
 from utils.engagement_tables import ensure_engagement_tables
@@ -53,6 +55,9 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SESSION_SECRET", "ouhud-secret-key"),
     max_age=60 * 60 * 24 * 7,
+    session_cookie=os.getenv("SESSION_COOKIE_NAME", "ouhud_session"),
+    same_site=os.getenv("SESSION_SAME_SITE", "lax"),
+    https_only=os.getenv("SESSION_HTTPS_ONLY", "0") in {"1", "true", "yes"},
 )
 
 # -------------------------------------------------------------------------
@@ -65,6 +70,7 @@ from routes import qr_resolve   # für /d/<slug>
 from routes import dyn
 from routes import user_profile
 from routes import settings
+from routes import billing
 from routes import team
 from routes import sla
 from routes import api
@@ -100,6 +106,7 @@ app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(user_profile.router)
 app.include_router(settings.router)
+app.include_router(billing.router)
 app.include_router(team.router)
 app.include_router(sla.router)
 app.include_router(api.router)
@@ -141,9 +148,56 @@ app.include_router(edit_qr.router)
 # -------------------------------------------------------------------------
 # 6️⃣ Home
 # -------------------------------------------------------------------------
+def _fallback_home_plans() -> List[Dict[str, object]]:
+    return [
+        {
+            "name": "Basic",
+            "price": 4.99,
+            "qr_limit": 10,
+            "free_months": 1,
+            "has_api_access": False,
+        },
+        {
+            "name": "Pro",
+            "price": 14.99,
+            "qr_limit": 50,
+            "free_months": 3,
+            "has_api_access": False,
+        },
+        {
+            "name": "Business",
+            "price": 29.99,
+            "qr_limit": 250,
+            "free_months": 6,
+            "has_api_access": True,
+        },
+        {
+            "name": "Enterprise",
+            "price": 0.0,
+            "qr_limit": 999999,
+            "free_months": 0,
+            "has_api_access": True,
+        },
+    ]
+
+
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def home(request: Request, db: Session = Depends(get_db)):
+    sort_order = {"basic": 1, "pro": 2, "business": 3, "enterprise": 4}
+    plans: List[object]
+    try:
+        db_plans = db.query(Plan).all()
+        if db_plans:
+            plans = sorted(
+                db_plans,
+                key=lambda p: sort_order.get(str(getattr(p, "name", "")).lower(), 99),
+            )
+        else:
+            plans = _fallback_home_plans()
+    except Exception:
+        plans = _fallback_home_plans()
+
+    return templates.TemplateResponse("index.html", {"request": request, "plans": plans})
 
 # -------------------------------------------------------------------------
 # 6.1️⃣ Example QR Image

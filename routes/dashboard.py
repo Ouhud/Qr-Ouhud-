@@ -23,7 +23,12 @@ from database import get_db
 from models.user import User
 from models.qrcode import QRCode
 from models.qr_scan import QRScan
+from models.qr_conversion import QRConversion
+from models.lead_capture import LeadCapture
+from models.feedback_entry import FeedbackEntry
+from models.coupon_redemption import CouponRedemption
 from routes.auth import get_current_user  # Für Session-Authentifizierung
+from utils.billing_access import is_billing_exempt_user
 
 # -------------------------------------------------------------------------
 # ⚙️ Router & Template Setup
@@ -31,6 +36,12 @@ from routes.auth import get_current_user  # Für Session-Authentifizierung
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 templates = Jinja2Templates(directory="templates")
 TEST_IPS = {"127.0.0.1", "::1", "localhost"}
+PLAN_LIMITS = {
+    "basic": 10,
+    "pro": 50,
+    "business": 250,
+    "enterprise": 999999,
+}
 
 
 def _detect_device_label(scan: QRScan) -> str:
@@ -46,6 +57,38 @@ def _detect_device_label(scan: QRScan) -> str:
     if "bot" in ua or "spider" in ua or "crawler" in ua or "curl/" in ua:
         return "Bot/Tool"
     return "Andere"
+
+
+def _to_utc(ts: datetime | None) -> datetime | None:
+    if ts is None:
+        return None
+    if ts.tzinfo is None:
+        return ts.replace(tzinfo=timezone.utc)
+    return ts.astimezone(timezone.utc)
+
+
+def _plan_usage(user: User, total_qrcodes: int) -> tuple[str, str, int, int, int]:
+    """
+    Liefert (plan_name, plan_display_name, qr_limit, qr_usage, qr_remaining)
+    basierend auf echtem Benutzer-Plan.
+    Fallback: Basic mit Limit 10.
+    """
+    current_plan = getattr(user, "plan", None)
+    plan_name = getattr(current_plan, "name", None) or "Basic"
+    plan_key = str(plan_name).strip().lower()
+
+    if plan_key in PLAN_LIMITS:
+        qr_limit = PLAN_LIMITS[plan_key]
+    else:
+        qr_limit = int(getattr(current_plan, "qr_limit", PLAN_LIMITS["basic"]) or PLAN_LIMITS["basic"])
+
+    qr_usage = total_qrcodes
+    qr_remaining = max(qr_limit - qr_usage, 0)
+    plan_display_name = plan_name
+    if is_billing_exempt_user(user):
+        plan_display_name = f"{plan_name} (Intern frei)"
+
+    return plan_name, plan_display_name, qr_limit, qr_usage, qr_remaining
 
 
 # -------------------------------------------------------------------------
@@ -114,7 +157,7 @@ def dashboard(
         )
         all_scans = scan_query.all()
     
-    active_campaigns = len([q for q in qr_codes if q.active])
+    active_qr_codes = len([q for q in qr_codes if q.active])
 
     # 📂 QR-Code-Aufschlüsselung nach Typ
     stats = {
@@ -133,31 +176,35 @@ def dashboard(
     scans_per_period: list[int] = []
     filtered_scans: list[QRScan] = []
     range_title = "Letzte 7 Tage"
+    period_start = datetime.combine(today - timedelta(days=6), time.min, tzinfo=timezone.utc)
+    period_end = now_utc
 
     if range_key == "7d":
         from_date = today - timedelta(days=6)
         start_range = datetime.combine(from_date, time.min, tzinfo=timezone.utc)
+        period_start = start_range
         filtered_scans = (
-            [s for s in all_scans if (s.timestamp.replace(tzinfo=timezone.utc) if s.timestamp and s.timestamp.tzinfo is None else s.timestamp) >= start_range]
+            [s for s in all_scans if (_to_utc(s.timestamp) or start_range) >= start_range]
         )
         for i in range(6, -1, -1):
             d = today - timedelta(days=i)
             chart_labels.append(d.strftime("%a"))
             scans_per_period.append(
-                len([s for s in filtered_scans if (s.timestamp.replace(tzinfo=timezone.utc) if s.timestamp and s.timestamp.tzinfo is None else s.timestamp).date() == d])
+                len([s for s in filtered_scans if (_to_utc(s.timestamp) or start_range).date() == d])
             )
         range_title = "Letzte 7 Tage"
     elif range_key == "30d":
         from_date = today - timedelta(days=29)
         start_range = datetime.combine(from_date, time.min, tzinfo=timezone.utc)
+        period_start = start_range
         filtered_scans = (
-            [s for s in all_scans if (s.timestamp.replace(tzinfo=timezone.utc) if s.timestamp and s.timestamp.tzinfo is None else s.timestamp) >= start_range]
+            [s for s in all_scans if (_to_utc(s.timestamp) or start_range) >= start_range]
         )
         for i in range(29, -1, -1):
             d = today - timedelta(days=i)
             chart_labels.append(d.strftime("%d.%m"))
             scans_per_period.append(
-                len([s for s in filtered_scans if (s.timestamp.replace(tzinfo=timezone.utc) if s.timestamp and s.timestamp.tzinfo is None else s.timestamp).date() == d])
+                len([s for s in filtered_scans if (_to_utc(s.timestamp) or start_range).date() == d])
             )
         range_title = "Letzte 30 Tage"
     else:  # 6m
@@ -174,8 +221,9 @@ def dashboard(
         first_year, first_month = months[0]
         from_date = date(first_year, first_month, 1)
         start_range = datetime.combine(from_date, time.min, tzinfo=timezone.utc)
+        period_start = start_range
         filtered_scans = (
-            [s for s in all_scans if (s.timestamp.replace(tzinfo=timezone.utc) if s.timestamp and s.timestamp.tzinfo is None else s.timestamp) >= start_range]
+            [s for s in all_scans if (_to_utc(s.timestamp) or start_range) >= start_range]
         )
         for y, m in months:
             chart_labels.append(f"{calendar.month_abbr[m]} {str(y)[2:]}")
@@ -184,8 +232,8 @@ def dashboard(
                     [
                         s
                         for s in filtered_scans
-                        if (s.timestamp.replace(tzinfo=timezone.utc) if s.timestamp and s.timestamp.tzinfo is None else s.timestamp).year == y
-                        and (s.timestamp.replace(tzinfo=timezone.utc) if s.timestamp and s.timestamp.tzinfo is None else s.timestamp).month == m
+                        if (_to_utc(s.timestamp) or start_range).year == y
+                        and (_to_utc(s.timestamp) or start_range).month == m
                     ]
                 )
             )
@@ -225,20 +273,161 @@ def dashboard(
         device_counts = [1]
 
     # ---------------------------------------------------------------------
-    # 📦 Tariflimit-Berechnung
+    # 🔝 Top 10 QR-Codes (aktueller Zeitraum vs. Vorzeitraum)
     # ---------------------------------------------------------------------
-    if total_qrcodes <= 10:
-        plan_name = "Basic"
-        qr_limit = 10
-    elif total_qrcodes <= 50:
-        plan_name = "Pro"
-        qr_limit = 50
-    else:
-        plan_name = "Business"
-        qr_limit = 250
+    top_qr_labels: list[str] = []
+    top_qr_current: list[int] = []
+    top_qr_previous: list[int] = []
+    top_qr_delta_pct: list[float] = []
 
-    qr_usage = total_qrcodes
-    qr_remaining = max(qr_limit - qr_usage, 0)
+    current_counts: dict[int, int] = {}
+    for s in filtered_scans:
+        current_counts[s.qr_id] = current_counts.get(s.qr_id, 0) + 1
+
+    previous_counts: dict[int, int] = {}
+    if qr_ids:
+        duration = period_end - period_start
+        previous_start = period_start - duration
+        previous_end = period_start
+        prev_query = (
+            db.query(QRScan)
+            .filter(QRScan.qr_id.in_(qr_ids))
+            .filter(QRScan.timestamp >= previous_start, QRScan.timestamp < previous_end)
+        )
+        if not include_test:
+            prev_query = (
+                prev_query
+                .filter(or_(QRScan.location.is_(None), ~QRScan.location.in_(TEST_IPS)))
+                .filter(or_(QRScan.user_agent.is_(None), ~QRScan.user_agent.ilike("curl/%")))
+                .filter(or_(QRScan.user_agent.is_(None), ~QRScan.user_agent.ilike("%postmanruntime%")))
+                .filter(or_(QRScan.user_agent.is_(None), ~QRScan.user_agent.ilike("%insomnia%")))
+                .filter(or_(QRScan.user_agent.is_(None), ~QRScan.user_agent.ilike("%httpie/%")))
+            )
+        for s in prev_query.all():
+            previous_counts[s.qr_id] = previous_counts.get(s.qr_id, 0) + 1
+
+    total_counts: dict[int, int] = {}
+    for s in all_scans:
+        total_counts[s.qr_id] = total_counts.get(s.qr_id, 0) + 1
+
+    ranked_qr_ids = sorted(current_counts.keys(), key=lambda qid: current_counts[qid], reverse=True)[:10]
+    if not ranked_qr_ids:
+        ranked_qr_ids = sorted(total_counts.keys(), key=lambda qid: total_counts[qid], reverse=True)[:10]
+
+    for qid in ranked_qr_ids:
+        qr_obj = qr_map.get(qid)
+        if not qr_obj:
+            continue
+        label = f"{qr_obj.slug} ({(qr_obj.type or '').upper()})"
+        cur = int(current_counts.get(qid, 0))
+        prev = int(previous_counts.get(qid, 0))
+        if prev > 0:
+            delta = round(((cur - prev) / prev) * 100.0, 1)
+        elif cur > 0:
+            delta = 100.0
+        else:
+            delta = 0.0
+        top_qr_labels.append(label)
+        top_qr_current.append(cur)
+        top_qr_previous.append(prev)
+        top_qr_delta_pct.append(delta)
+
+    # ---------------------------------------------------------------------
+    # 🔥 Heatmap: Wochentag × Stunde
+    # ---------------------------------------------------------------------
+    heatmap_day_labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+    heatmap_counts: dict[tuple[int, int], int] = {}
+    for s in filtered_scans:
+        ts = _to_utc(s.timestamp)
+        if ts is None:
+            continue
+        key = (ts.weekday(), ts.hour)
+        heatmap_counts[key] = heatmap_counts.get(key, 0) + 1
+    heatmap_points = [
+        {"x": hour, "y": weekday, "v": count}
+        for (weekday, hour), count in sorted(heatmap_counts.items())
+    ]
+    heatmap_max = max([p["v"] for p in heatmap_points], default=1)
+
+    # ---------------------------------------------------------------------
+    # 🧭 Conversion-Funnel (Scans → Visits → Conversions)
+    # ---------------------------------------------------------------------
+    scans_stage = len(filtered_scans)
+    visits_stage = scans_stage
+    conversions_stage = 0
+    conversion_rate_label = "0%"
+
+    if qr_ids:
+        visit_events = (
+            db.query(func.count(QRConversion.id))
+            .filter(QRConversion.qr_id.in_(qr_ids))
+            .filter(QRConversion.created_at >= period_start, QRConversion.created_at < period_end)
+            .filter(QRConversion.event_type == "visit")
+            .scalar()
+            or 0
+        )
+        conversion_events = (
+            db.query(func.count(QRConversion.id))
+            .filter(QRConversion.qr_id.in_(qr_ids))
+            .filter(QRConversion.created_at >= period_start, QRConversion.created_at < period_end)
+            .filter(QRConversion.event_type != "visit")
+            .scalar()
+            or 0
+        )
+        lead_conversions = (
+            db.query(func.count(LeadCapture.id))
+            .filter(LeadCapture.qr_id.in_(qr_ids))
+            .filter(LeadCapture.created_at >= period_start, LeadCapture.created_at < period_end)
+            .scalar()
+            or 0
+        )
+        feedback_conversions = (
+            db.query(func.count(FeedbackEntry.id))
+            .filter(FeedbackEntry.qr_id.in_(qr_ids))
+            .filter(FeedbackEntry.created_at >= period_start, FeedbackEntry.created_at < period_end)
+            .scalar()
+            or 0
+        )
+        coupon_conversions = (
+            db.query(func.count(CouponRedemption.id))
+            .filter(CouponRedemption.qr_id.in_(qr_ids))
+            .filter(CouponRedemption.redeemed_at >= period_start, CouponRedemption.redeemed_at < period_end)
+            .scalar()
+            or 0
+        )
+
+        visits_stage = max(scans_stage, int(visit_events))
+        raw_conversions = int(conversion_events + lead_conversions + feedback_conversions + coupon_conversions)
+        conversions_stage = min(raw_conversions, visits_stage)
+
+    if visits_stage > 0:
+        rate = conversions_stage / visits_stage
+        if rate == 0:
+            conversion_rate_label = "0%"
+        elif rate < 0.01:
+            conversion_rate_label = "<1%"
+        else:
+            conversion_rate_label = f"{round(rate * 100, 1)}%"
+
+    # ---------------------------------------------------------------------
+    # 📦 Tariflimit-Berechnung (echter Abo-Plan)
+    # ---------------------------------------------------------------------
+    plan_name, plan_display_name, qr_limit, qr_usage, qr_remaining = _plan_usage(user, total_qrcodes)
+
+    if qr_limit > 0:
+        ratio = qr_usage / qr_limit
+        qr_usage_percent = int(round(min(ratio, 1) * 100))
+        if qr_usage > 0 and qr_usage_percent == 0:
+            qr_usage_percent = 1
+        if ratio == 0:
+            qr_usage_percent_label = "0%"
+        elif ratio < 0.01:
+            qr_usage_percent_label = "<1%"
+        else:
+            qr_usage_percent_label = f"{qr_usage_percent}%"
+    else:
+        qr_usage_percent = 0
+        qr_usage_percent_label = "0%"
 
     # 🕒 Letzte Scans (aus gefiltertem Zeitraum)
     recent_scans = []
@@ -268,7 +457,7 @@ def dashboard(
             "qr_stats": stats,
             "total_qrcodes": total_qrcodes,
             "total_scans": total_scans,
-            "active_campaigns": active_campaigns,
+            "active_qr_codes": active_qr_codes,
             "scans_today": scans_today,
             "chart_labels": chart_labels,
             "scans_per_period": scans_per_period,
@@ -280,8 +469,21 @@ def dashboard(
             "device_counts": device_counts,
             "recent_scans": recent_scans,
             "plan_name": plan_name,
+            "plan_display_name": plan_display_name,
             "qr_limit": qr_limit,
             "qr_usage": qr_usage,
             "qr_remaining": qr_remaining,
+            "qr_usage_percent": qr_usage_percent,
+            "qr_usage_percent_label": qr_usage_percent_label,
+            "top_qr_labels": top_qr_labels,
+            "top_qr_current": top_qr_current,
+            "top_qr_previous": top_qr_previous,
+            "top_qr_delta_pct": top_qr_delta_pct,
+            "heatmap_day_labels": heatmap_day_labels,
+            "heatmap_points": heatmap_points,
+            "heatmap_max": heatmap_max,
+            "funnel_labels": ["Scans", "Visits", "Conversions"],
+            "funnel_values": [scans_stage, visits_stage, conversions_stage],
+            "conversion_rate_label": conversion_rate_label,
         },
     )
