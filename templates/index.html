@@ -109,7 +109,11 @@
           </li>
         </ul>
 
+        {% if plan.name|lower == "enterprise" %}
+        <a href="/contact?topic=enterprise" class="btn plan-btn">Kontakt aufnehmen</a>
+        {% else %}
         <a href="/auth/register" class="btn plan-btn">Jetzt wählen</a>
+        {% endif %}
       </div>
       {% endfor %}
     </div>

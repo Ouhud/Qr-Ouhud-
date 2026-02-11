@@ -67,9 +67,10 @@ def _to_utc(ts: datetime | None) -> datetime | None:
     return ts.astimezone(timezone.utc)
 
 
-def _plan_usage(user: User, total_qrcodes: int) -> tuple[str, str, int, int, int]:
+def _plan_usage(user: User, total_qrcodes: int) -> tuple[str, str, int, int, int, bool, str, str]:
     """
-    Liefert (plan_name, plan_display_name, qr_limit, qr_usage, qr_remaining)
+    Liefert:
+    (plan_name, plan_display_name, qr_limit, qr_usage, qr_remaining, qr_unlimited, qr_limit_display, qr_remaining_display)
     basierend auf echtem Benutzer-Plan.
     Fallback: Basic mit Limit 10.
     """
@@ -84,11 +85,27 @@ def _plan_usage(user: User, total_qrcodes: int) -> tuple[str, str, int, int, int
 
     qr_usage = total_qrcodes
     qr_remaining = max(qr_limit - qr_usage, 0)
+    qr_unlimited = False
     plan_display_name = plan_name
+    qr_limit_display = str(qr_limit)
+    qr_remaining_display = str(qr_remaining)
+
     if is_billing_exempt_user(user):
         plan_display_name = f"{plan_name} (Intern frei)"
+        qr_unlimited = True
+        qr_limit_display = "Unbegrenzt"
+        qr_remaining_display = "Unbegrenzt"
 
-    return plan_name, plan_display_name, qr_limit, qr_usage, qr_remaining
+    return (
+        plan_name,
+        plan_display_name,
+        qr_limit,
+        qr_usage,
+        qr_remaining,
+        qr_unlimited,
+        qr_limit_display,
+        qr_remaining_display,
+    )
 
 
 # -------------------------------------------------------------------------
@@ -412,9 +429,21 @@ def dashboard(
     # ---------------------------------------------------------------------
     # 📦 Tariflimit-Berechnung (echter Abo-Plan)
     # ---------------------------------------------------------------------
-    plan_name, plan_display_name, qr_limit, qr_usage, qr_remaining = _plan_usage(user, total_qrcodes)
+    (
+        plan_name,
+        plan_display_name,
+        qr_limit,
+        qr_usage,
+        qr_remaining,
+        qr_unlimited,
+        qr_limit_display,
+        qr_remaining_display,
+    ) = _plan_usage(user, total_qrcodes)
 
-    if qr_limit > 0:
+    if qr_unlimited:
+        qr_usage_percent = 0
+        qr_usage_percent_label = "Intern frei"
+    elif qr_limit > 0:
         ratio = qr_usage / qr_limit
         qr_usage_percent = int(round(min(ratio, 1) * 100))
         if qr_usage > 0 and qr_usage_percent == 0:
@@ -473,6 +502,9 @@ def dashboard(
             "qr_limit": qr_limit,
             "qr_usage": qr_usage,
             "qr_remaining": qr_remaining,
+            "qr_unlimited": qr_unlimited,
+            "qr_limit_display": qr_limit_display,
+            "qr_remaining_display": qr_remaining_display,
             "qr_usage_percent": qr_usage_percent,
             "qr_usage_percent_label": qr_usage_percent_label,
             "top_qr_labels": top_qr_labels,

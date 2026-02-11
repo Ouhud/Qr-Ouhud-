@@ -25,7 +25,7 @@
           <label for="email">E-Mail-Adresse</label>
           <div class="input-wrapper">
             <span class="input-icon">✉️</span>
-            <input type="email" id="email" name="email" placeholder="beispiel@domain.de" required autofocus>
+            <input type="email" id="email" name="email" placeholder="beispiel@domain.de" value="{{ prefill_email or '' }}" required autofocus>
           </div>
         </div>
 
@@ -47,6 +47,13 @@
             <span class="input-icon">🛡️</span>
             <input type="text" id="otp_code" name="otp_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" {% if require_2fa %}required{% endif %}>
           </div>
+        </div>
+
+        <div class="checkbox-group">
+          <label class="custom-checkbox">
+            <input type="checkbox" name="remember_me">
+            <span class="label-text">Angemeldet bleiben (7 Tage)</span>
+          </label>
         </div>
 
         <button type="submit" class="auth-submit-btn">
@@ -79,14 +86,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top right, #e0e7ff 0%, #f3f4f6 50%);
-  padding: 20px;
+  background: radial-gradient(circle at bottom left, #e0e7ff 0%, #f3f4f6 50%);
+  padding: 40px 20px;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .auth-container {
   width: 100%;
-  max-width: 440px;
+  max-width: 520px;
 }
 
 .auth-card {
@@ -113,8 +120,8 @@
 }
 
 .auth-header h1 {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
   color: var(--auth-primary);
   margin: 0 0 8px 0;
 }
@@ -129,7 +136,7 @@
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .input-group {
@@ -201,6 +208,25 @@
 
 .eye-toggle:hover { opacity: 1; }
 
+/* === CHECKBOX === */
+.checkbox-group { margin-top: 2px; }
+.custom-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--auth-text-muted);
+}
+.custom-checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.custom-checkbox .label-text { margin: 0; }
+
 /* === BUTTON === */
 .auth-submit-btn {
   margin-top: 10px;
@@ -210,7 +236,7 @@
   border: none;
   border-radius: 12px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -283,6 +309,13 @@ input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
   -webkit-text-fill-color: #000 !important;
 }
+
+@media (max-width: 680px) {
+  .auth-card {
+    padding: 28px 18px;
+    border-radius: 18px;
+  }
+}
 </style>
 
 <script>
@@ -298,10 +331,5 @@ function togglePassword() {
   }
 }
 
-(() => {
-  const email = document.getElementById("email");
-  const prefill = "{{ prefill_email or '' }}";
-  if (email && prefill) email.value = prefill;
-})();
 </script>
 {% endblock %}

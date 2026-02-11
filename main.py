@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
-from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from dotenv import load_dotenv
@@ -212,6 +212,14 @@ def example_qr():
 @app.get("/sw.js")
 def service_worker():
     return FileResponse("static/sw.js", media_type="application/javascript")
+
+# -------------------------------------------------------------------------
+# 6.3️⃣ Chrome DevTools Well-Known Probe (noise-free logs)
+# -------------------------------------------------------------------------
+@app.get("/.well-known/appspecific/com.chrome.devtools.json", include_in_schema=False)
+def chrome_devtools_probe() -> Response:
+    # Chrome probes this endpoint locally; 204 avoids noisy 404 logs.
+    return Response(status_code=204)
 
 # -------------------------------------------------------------------------
 # 7️⃣ Debug Route

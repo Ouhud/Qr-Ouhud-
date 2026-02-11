@@ -33,8 +33,8 @@
     <div class="chart-card">
       <h3>💼 Abo & QR-Limit ({{ plan_display_name }})</h3>
       <p class="usage-meta">
-        Verwendet: <strong>{{ qr_usage }}</strong> / {{ qr_limit }} |
-        Verfügbar: <strong>{{ qr_remaining }}</strong> |
+        Verwendet: <strong>{{ qr_usage }}</strong>{% if not qr_unlimited %} / {{ qr_limit_display }}{% endif %} |
+        Verfügbar: <strong>{{ qr_remaining_display }}</strong> |
         Auslastung: <strong>{{ qr_usage_percent_label }}</strong>
       </p>
       <div class="chart-canvas chart-canvas-usage">
@@ -339,13 +339,18 @@ new Chart(document.getElementById("deviceChart"), {
 });
 
 /* === PROGRESS CHART: QR-Limit Nutzung === */
+const qrUnlimited = {{ (qr_unlimited or false) | tojson }};
+const usageLabels = qrUnlimited ? ["Intern frei"] : ["Verwendet", "Verfügbar"];
+const usageData = qrUnlimited ? [1] : [{{ qr_usage or 0 }}, {{ qr_remaining or 0 }}];
+const usageColors = qrUnlimited ? ["#10b981"] : ["#2563EB", "#e2e8f0"];
+
 new Chart(document.getElementById("usageChart"), {
   type: 'doughnut',
   data: {
-    labels: ["Verwendet","Verfügbar"],
+    labels: usageLabels,
     datasets: [{
-      data: [{{ qr_usage or 0 }}, {{ qr_remaining or 0 }}],
-      backgroundColor: ["#2563EB","#e2e8f0"],
+      data: usageData,
+      backgroundColor: usageColors,
       borderWidth: 0
     }]
   },

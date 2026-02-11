@@ -27,7 +27,7 @@
           <label for="username">Benutzername</label>
           <div class="input-wrapper">
             <span class="input-icon">👤</span>
-            <input type="text" id="username" name="username" placeholder="Dein vollständiger Name" required autofocus>
+            <input type="text" id="username" name="username" placeholder="Dein vollständiger Name" value="{{ prefill_username or '' }}" required autofocus>
           </div>
         </div>
 
@@ -35,7 +35,42 @@
           <label for="email">E-Mail-Adresse</label>
           <div class="input-wrapper">
             <span class="input-icon">✉️</span>
-            <input type="email" id="email" name="email" placeholder="name@beispiel.de" required>
+            <input type="email" id="email" name="email" placeholder="name@beispiel.de" value="{{ prefill_email or '' }}" required>
+          </div>
+        </div>
+
+        <div class="input-group plan-choice-group">
+          <label>Abo auswählen</label>
+          <div class="plan-grid">
+            {% for plan in plans or [] %}
+            {% set key = (plan.name or '')|lower %}
+            <label class="plan-option">
+              <input type="radio" name="selected_plan" value="{{ key }}" {% if (selected_plan or 'basic') == key %}checked{% endif %} required>
+              <div class="plan-option-card">
+                <div class="plan-option-header">
+                  <strong>{{ plan.name }}</strong>
+                  <span class="plan-option-price">
+                    {% if plan.price and plan.price > 0 %}
+                      {{ "%.2f"|format(plan.price) }} €/Monat
+                    {% else %}
+                      Individuell
+                    {% endif %}
+                  </span>
+                </div>
+                <ul class="plan-option-features">
+                  <li>Bis zu {{ plan.qr_limit }} QR-Codes</li>
+                  {% if plan.free_months > 0 %}
+                  <li>{{ plan.free_months }} Monat(e) gratis</li>
+                  {% endif %}
+                  <li>{% if plan.has_api_access %}API-Zugang inklusive{% else %}Kein API-Zugang{% endif %}</li>
+                </ul>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+          <div class="enterprise-contact">
+            <span class="enterprise-contact-text">Enterprise oder individuelles Angebot?</span>
+            <a href="/contact?topic=enterprise" class="enterprise-contact-btn">Kontakt aufnehmen</a>
           </div>
         </div>
 
@@ -60,7 +95,6 @@
         <div class="checkbox-group">
           <label class="custom-checkbox">
             <input type="checkbox" name="privacy_accepted" required>
-            <span class="checkmark"></span>
             <span class="label-text">
               Ich akzeptiere die <a href="/privacy-policy">Datenschutzbestimmungen</a>
             </span>
@@ -105,7 +139,7 @@
 
 .auth-container {
   width: 100%;
-  max-width: 480px;
+  max-width: 760px;
 }
 
 .auth-card {
@@ -129,7 +163,8 @@
 .input-wrapper { position: relative; display: flex; align-items: center; }
 .input-icon { position: absolute; left: 14px; font-size: 16px; pointer-events: none; }
 
-.input-wrapper input {
+.input-wrapper input,
+.input-wrapper select {
   width: 100%;
   padding: 12px 14px 12px 42px;
   border: 1.5px solid var(--auth-border);
@@ -140,7 +175,98 @@
   transition: all 0.2s ease;
 }
 
-.input-wrapper input:focus {
+.plan-choice-group {
+  gap: 10px;
+}
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.plan-option {
+  display: block;
+  cursor: pointer;
+  font-weight: 400;
+  color: inherit;
+}
+.plan-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.plan-option-card {
+  border: 1.5px solid var(--auth-border);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff;
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.plan-option:hover .plan-option-card {
+  border-color: #c7d2fe;
+  transform: translateY(-1px);
+}
+.plan-option input:checked + .plan-option-card {
+  border-color: var(--auth-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.plan-option-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+.plan-option-header strong {
+  color: var(--auth-primary);
+  font-size: 15px;
+}
+.plan-option-price {
+  color: var(--auth-text-main);
+  font-size: 13px;
+  font-weight: 600;
+}
+.plan-option-features {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--auth-text-muted);
+  font-size: 13px;
+  display: grid;
+  gap: 3px;
+}
+.enterprise-contact {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.enterprise-contact-text {
+  font-size: 13px;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+.enterprise-contact-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #fff;
+  background: var(--auth-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+.enterprise-contact-btn:hover {
+  background: #092160;
+}
+
+.input-wrapper input:focus,
+.input-wrapper select:focus {
   border-color: var(--auth-accent);
   outline: none;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
@@ -158,14 +284,23 @@
 .checkbox-group { margin-top: 5px; }
 .custom-checkbox {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
   font-size: 14px;
   color: var(--auth-text-muted);
   line-height: 1.4;
 }
-.custom-checkbox input { margin-top: 3px; cursor: pointer; }
+.custom-checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.custom-checkbox .label-text {
+  margin: 0;
+}
 .custom-checkbox a { color: var(--auth-accent); text-decoration: none; font-weight: 600; }
 
 /* === BUTTON === */
@@ -213,6 +348,19 @@
 input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
   -webkit-text-fill-color: #000 !important;
+}
+
+@media (max-width: 680px) {
+  .auth-card {
+    padding: 28px 18px;
+    border-radius: 18px;
+  }
+  .plan-grid {
+    grid-template-columns: 1fr;
+  }
+  .enterprise-contact {
+    align-items: flex-start;
+  }
 }
 </style>
 

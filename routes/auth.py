@@ -37,13 +37,31 @@ def _detect_device_name(user_agent: str) -> str:
     return "Unbekannt"
 
 
+def _registration_plans(db: Session) -> list[Plan]:
+    """Liefert Pläne in stabiler Reihenfolge für die Registrierungsseite."""
+    plan_map = {
+        str(plan.name or "").strip().lower(): plan
+        for plan in db.query(Plan).all()
+    }
+    preferred_order = ["basic", "pro", "business"]
+    ordered = [plan_map[key] for key in preferred_order if key in plan_map]
+    return ordered
+
+
 # ─────────────────────────────────────────────
 # 🧾 Registrierung (GET)
 # ─────────────────────────────────────────────
 @router.get("/register", response_class=HTMLResponse)
-def register_form(request: Request):
+def register_form(request: Request, db: Session = Depends(get_db)):
     """Zeigt das Registrierungsformular an."""
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(
+        "register.html",
+        {
+            "request": request,
+            "plans": _registration_plans(db),
+            "selected_plan": "basic",
+        },
+    )
 
 
 # ─────────────────────────────────────────────
@@ -56,15 +74,32 @@ def register_user(
     email: str = Form(...),
     password: str = Form(...),
     confirm_password: str = Form(...),
+    selected_plan: str = Form("basic"),
     privacy_accepted: str = Form(None),
     db: Session = Depends(get_db)
 ):
-    """Registriert einen neuen Benutzer und weist ihm den Basic-Plan zu."""
+    """Registriert neuen Benutzer und führt je nach Tarif in den passenden nächsten Schritt."""
+    selected_plan_key = str(selected_plan or "basic").strip().lower()
+    available_plans = {str(p.name or "").strip().lower(): p for p in _registration_plans(db)}
+
+    if selected_plan_key not in available_plans:
+        selected_plan_key = "basic"
+
+    basic_plan = available_plans.get("basic")
+    selected_plan_obj = available_plans.get(selected_plan_key)
+    render_context = {
+        "request": request,
+        "plans": _registration_plans(db),
+        "selected_plan": selected_plan_key,
+        "prefill_username": username,
+        "prefill_email": email,
+    }
+
     # 🔒 Passwort bestätigen
     if password != confirm_password:
         return templates.TemplateResponse(
             "register.html",
-            {"request": request, "error": "❌ Die Passwörter stimmen nicht überein."},
+            {**render_context, "error": "❌ Die Passwörter stimmen nicht überein."},
             status_code=400,
         )
 
@@ -72,7 +107,7 @@ def register_user(
     if not privacy_accepted:
         return templates.TemplateResponse(
             "register.html",
-            {"request": request, "error": "❌ Bitte akzeptiere die Datenschutzbestimmungen."},
+            {**render_context, "error": "❌ Bitte akzeptiere die Datenschutzbestimmungen."},
             status_code=400,
         )
 
@@ -80,29 +115,42 @@ def register_user(
     if db.query(User).filter(User.email == email).first():
         return templates.TemplateResponse(
             "register.html",
-            {"request": request, "error": "❌ Diese E-Mail-Adresse ist bereits registriert."},
+            {**render_context, "error": "❌ Diese E-Mail-Adresse ist bereits registriert."},
             status_code=400,
         )
 
     # 🔐 Passwort hashen
     hashed_pw = bcrypt.hash(password)
 
-    # 🧩 Basic-Plan automatisch zuweisen
-    basic_plan = db.query(Plan).filter(Plan.name == "Basic").first()
-
-    # 💾 Benutzer speichern
+    # 💾 Benutzer speichern (Initialplan: Basic als sicherer Einstieg)
     new_user = User(
         username=username,
         email=email,
         password_hash=hashed_pw,
-        plan_id=basic_plan.id if basic_plan else None
+        plan_id=basic_plan.id if basic_plan else (selected_plan_obj.id if selected_plan_obj else None),
     )
 
     db.add(new_user)
     db.commit()
+    db.refresh(new_user)
+
+    # 🔐 Direkt einloggen, damit nach Registrierung sofort der nächste Schritt klappt
+    request.session.clear()
+    request.session["user_id"] = new_user.id
+    request.session["user"] = {
+        "id": new_user.id,
+        "username": new_user.username,
+        "email": new_user.email,
+    }
+    request.session["expiry"] = int(timedelta(minutes=30).total_seconds())
+
     print(f"[REGISTER] Neuer Benutzer registriert: {username} ({email})")
 
-    return RedirectResponse("/auth/login", status_code=303)
+    # 🧭 Onboarding nach gewähltem Tarif
+    if selected_plan_key in {"pro", "business"}:
+        return RedirectResponse(f"/billing/upgrade/{selected_plan_key}", status_code=303)
+
+    return RedirectResponse("/dashboard/", status_code=303)
 
 
 # ─────────────────────────────────────────────
@@ -132,7 +180,11 @@ def login_user(
     if not user or not bcrypt.verify(password, str(user.password_hash)):
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "❌ Ungültige E-Mail oder Passwort."},
+            {
+                "request": request,
+                "error": "❌ Ungültige E-Mail oder Passwort.",
+                "prefill_email": email,
+            },
             status_code=400,
         )
 
