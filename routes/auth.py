@@ -5,13 +5,16 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from passlib.hash import bcrypt
 from datetime import timedelta, datetime, timezone
+import hashlib
+import hmac
+import time
+import os
 from database import get_db, SessionLocal
 from models.user import User
 from models.plan import Plan
 from models.login_device import LoginDevice
 from utils.two_factor import verify_totp
 from utils.app_url import resolve_app_base_url
-from auth_utils import make_reset_token, verify_reset_token
 
 # 📧 Mail-Funktion importieren (für Passwort-Reset)
 # type: ignore
@@ -22,6 +25,31 @@ import secrets                             # ✅ für Token-Erzeugung (sicherer 
 # ─────────────────────────────────────────────
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 templates = Jinja2Templates(directory="templates")
+
+
+def make_reset_token(user_id: str, expires_in: int = 3600) -> str:
+    """Erzeugt ein zeitlich begrenztes Token für Passwort-Reset."""
+    secret = os.getenv("SECRET_KEY", "dev-secret")
+    expiry = int(time.time()) + expires_in
+    payload = f"{user_id}:{expiry}"
+    signature = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return f"{payload}:{signature}"
+
+
+def verify_reset_token(token: str) -> tuple[bool, str | None]:
+    """Prüft, ob ein Token gültig und nicht abgelaufen ist."""
+    secret = os.getenv("SECRET_KEY", "dev-secret")
+    try:
+        user_id, expiry, signature = token.split(":")
+        if int(expiry) < int(time.time()):
+            return False, None
+        payload = f"{user_id}:{expiry}"
+        expected = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, signature):
+            return False, None
+        return True, user_id
+    except Exception:
+        return False, None
 
 
 def _detect_device_name(user_agent: str) -> str:
