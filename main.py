@@ -24,6 +24,7 @@ from utils.login_devices import ensure_login_devices_table
 from utils.engagement_tables import ensure_engagement_tables
 from utils.enterprise_tables import ensure_enterprise_tables
 from utils.api_keys import ensure_api_key_columns, ensure_api_keys_table
+from utils.tenant import resolve_tenant_context
 
 # -------------------------------------------------------------------------
 # 1️⃣ .env laden (muss ganz oben sein!)
@@ -98,6 +99,20 @@ def _safe_redirect_path(raw_target: str | None) -> str:
     if parsed.query:
         return f"{path}?{parsed.query}"
     return path
+
+
+@app.middleware("http")
+async def tenant_middleware(request: Request, call_next):
+    forwarded_host = request.headers.get("x-forwarded-host")
+    host_header = forwarded_host or request.headers.get("host") or request.url.hostname or ""
+    tenant_ctx = resolve_tenant_context(host_header, os.getenv("APP_DOMAIN"))
+
+    request.state.host = tenant_ctx.host
+    request.state.subdomain = tenant_ctx.subdomain
+    request.state.tenant_slug = tenant_ctx.tenant_slug
+    request.state.is_main_portal = tenant_ctx.is_main_portal
+
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -251,7 +266,7 @@ def _fallback_home_plans() -> List[Dict[str, object]]:
     ]
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     sort_order = {"basic": 1, "pro": 2, "business": 3, "enterprise": 4}
     plans: List[object]
