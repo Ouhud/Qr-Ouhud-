@@ -50,7 +50,9 @@
     <p><strong>{{ v_pw }}</strong> {{ data.password or '-' }}</p>
     <p><strong>{{ v_hidden }}</strong> {{ v_yes if data.hidden else v_no }}</p>
     <p><strong>{{ v_dynamic }}</strong> <a href="/d/{{ qr.slug }}" target="_blank" rel="noopener">/d/{{ qr.slug }}</a></p>
-    <a class="btn-primary" href="/qr/edit/{{ qr.slug }}">{{ v_edit }}</a>
+    {% if can_edit %}
+      <a class="btn-primary" href="/qr/edit/{{ qr.slug }}">{{ v_edit }}</a>
+    {% endif %}
   </div>
 </section>
 {% endblock %}

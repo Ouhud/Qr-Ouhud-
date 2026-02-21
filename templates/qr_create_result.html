@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set lang = request.state.lang if request and request.state else 'de' %}
+{% if lang == 'en' %}
+  {% set t_title = '✅ QR code created – Ouhud QR' %}
+  {% set t_h1 = '✅ QR code created successfully!' %}
+  {% set t_dyn = 'Dynamic link:' %}
+  {% set t_open = '🔗 Open dynamic link' %}
+  {% set t_download = '⬇️ Download QR code' %}
+  {% set t_new = '➕ Create another QR' %}
+{% elif lang == 'ar' %}
+  {% set t_title = '✅ تم إنشاء رمز QR – Ouhud QR' %}
+  {% set t_h1 = '✅ تم إنشاء رمز QR بنجاح!' %}
+  {% set t_dyn = 'الرابط الديناميكي:' %}
+  {% set t_open = '🔗 فتح الرابط الديناميكي' %}
+  {% set t_download = '⬇️ تنزيل QR' %}
+  {% set t_new = '➕ إنشاء QR جديد' %}
+{% else %}
+  {% set t_title = '✅ QR-Code erstellt – Ouhud QR' %}
+  {% set t_h1 = '✅ QR-Code erfolgreich erstellt!' %}
+  {% set t_dyn = 'Dynamischer Link:' %}
+  {% set t_open = '🔗 Dynamischen Link öffnen' %}
+  {% set t_download = '⬇️ QR-Code herunterladen' %}
+  {% set t_new = '➕ Neuen QR erstellen' %}
+{% endif %}
+{% block title %}{{ t_title }}{% endblock %}
+
+{% block content %}
+<section class="qr-generator qr-result-unified" style="max-width:820px;margin:2rem auto;text-align:center;">
+  <h1 style="color:var(--primary);font-size:2rem;font-weight:700;margin-bottom:1rem;">{{ t_h1 }}</h1>
+
+  {% if qr_image %}
+    <div style="margin:2rem 0;">
+      <img src="data:image/png;base64,{{ qr_image }}" alt="QR-Code" style="width:320px;height:320px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
+    </div>
+  {% elif qr and qr.image_path %}
+    <div style="margin:2rem 0;">
+      <img src="/{{ qr.image_path }}" alt="QR-Code" style="width:320px;height:320px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.12);">
+    </div>
+  {% endif %}
+
+  {% if dynamic_url %}
+    <p style="font-size:1.1rem;color:#1e293b;margin-bottom:2rem;">
+      📎 <strong>{{ t_dyn }}</strong><br>
+      <a href="{{ dynamic_url }}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;">{{ dynamic_url }}</a>
+    </p>
+  {% endif %}
+
+  <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:1rem;margin-top:2rem;">
+    {% if dynamic_url %}
+      <a href="{{ dynamic_url }}" target="_blank" rel="noopener" class="btn primary" style="padding:0.85rem 1.4rem;border-radius:12px;font-size:1rem;">{{ t_open }}</a>
+    {% endif %}
+    {% if qr and qr.image_path %}
+      <a href="/{{ qr.image_path }}" download class="btn secondary" style="padding:0.85rem 1.4rem;border-radius:12px;font-size:1rem;">{{ t_download }}</a>
+    {% endif %}
+    <a href="/qr/new" class="btn" style="background:#e2e8f0;padding:0.85rem 1.4rem;border-radius:12px;font-size:1rem;color:#1e293b;">{{ t_new }}</a>
+  </div>
+</section>
+{% endblock %}

@@ -18,7 +18,10 @@
   {% set w_ssid = 'SSID:' %}
   {% set w_encryption = 'Encryption:' %}
   {% set w_password = 'Password:' %}
-  {% set w_open = '🔓 Open network' %}
+  {% set w_dynamic = 'Dynamic link:' %}
+  {% set w_open_link = '🔗 Open dynamic link' %}
+  {% set w_download = '⬇️ Download QR code' %}
+  {% set w_open_network = '🔓 Open network' %}
   {% set w_print = '🖨️ Print QR code' %}
 {% elif lang == 'ar' %}
   {% set w_title = '✅ تم إنشاء رمز QR للواي فاي!' %}
@@ -26,7 +29,10 @@
   {% set w_ssid = 'اسم الشبكة:' %}
   {% set w_encryption = 'التشفير:' %}
   {% set w_password = 'كلمة المرور:' %}
-  {% set w_open = '🔓 شبكة مفتوحة' %}
+  {% set w_dynamic = 'الرابط الديناميكي:' %}
+  {% set w_open_link = '🔗 فتح الرابط الديناميكي' %}
+  {% set w_download = '⬇️ تنزيل QR' %}
+  {% set w_open_network = '🔓 شبكة مفتوحة' %}
   {% set w_print = '🖨️ طباعة رمز QR' %}
 {% else %}
   {% set w_title = '✅ WLAN-QR-Code erstellt!' %}
@@ -34,7 +40,10 @@
   {% set w_ssid = 'SSID:' %}
   {% set w_encryption = 'Verschlüsselung:' %}
   {% set w_password = 'Passwort:' %}
-  {% set w_open = '🔓 Offenes Netzwerk' %}
+  {% set w_dynamic = 'Dynamischer Link:' %}
+  {% set w_open_link = '🔗 Dynamischen Link öffnen' %}
+  {% set w_download = '⬇️ QR-Code herunterladen' %}
+  {% set w_open_network = '🔓 Offenes Netzwerk' %}
   {% set w_print = '🖨️ QR-Code drucken' %}
 {% endif %}
 <section class="qr-result qr-result-unified">
@@ -42,7 +51,11 @@
   <p class="subtitle">{{ w_sub }}</p>
 
   <div class="qr-card">
-    <img src="data:image/png;base64,{{ qr_image }}" alt="QR-Code Vorschau" class="qr-preview">
+    {% if qr_image %}
+      <img src="data:image/png;base64,{{ qr_image }}" alt="QR-Code Vorschau" class="qr-preview">
+    {% elif qr and qr.image_path %}
+      <img src="/{{ qr.image_path }}" alt="QR-Code Vorschau" class="qr-preview">
+    {% endif %}
 
     <div class="qr-info">
       <p><strong>{{ w_ssid }}</strong> {{ ssid }}</p>
@@ -50,11 +63,26 @@
       {% if password %}
         <p><strong>{{ w_password }}</strong> {{ password }}</p>
       {% else %}
-        <p><strong>{{ w_open }}</strong></p>
+        <p><strong>{{ w_open_network }}</strong></p>
       {% endif %}
     </div>
 
-    <a href="#" class="btn-link no-print" onclick="return printQrFromSelector('.qr-preview')">{{ w_print }}</a>
+    {% if dynamic_url %}
+      <p style="margin-top:1rem;">
+        <strong>{{ w_dynamic }}</strong><br>
+        <a href="{{ dynamic_url }}" target="_blank" rel="noopener">{{ dynamic_url }}</a>
+      </p>
+    {% endif %}
+
+    <div class="qr-actions">
+      {% if dynamic_url %}
+        <a href="{{ dynamic_url }}" target="_blank" rel="noopener" class="btn-link no-print">{{ w_open_link }}</a>
+      {% endif %}
+      {% if qr and qr.image_path %}
+        <a href="/{{ qr.image_path }}" download class="btn-link no-print">{{ w_download }}</a>
+      {% endif %}
+      <a href="#" class="btn-link no-print" onclick="return printQrFromSelector('.qr-preview')">{{ w_print }}</a>
+    </div>
   </div>
 </section>
 
@@ -134,6 +162,13 @@
 .btn-link:hover {
   background: linear-gradient(135deg, #0B1742, #1E3A8A);
   transform: scale(1.02);
+}
+.qr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
 }
 
 /* 🖨️ Druckoptimierung */

@@ -5,6 +5,8 @@
   {% set t_h1 = '✅ Email QR code created successfully' %}
   {% set t_sub = 'Scan the code or click below to open your email or download the QR code.' %}
   {% set t_open = '📧 Open email' %}
+  {% set t_dynamic = 'Dynamic link:' %}
+  {% set t_open_dynamic = '🔗 Open dynamic link' %}
   {% set t_download = '⬇️ Download QR code' %}
   {% set t_print = '🖨️ Print QR code' %}
   {% set t_share = '🔗 Share or embed' %}
@@ -15,6 +17,8 @@
   {% set t_h1 = '✅ تم إنشاء QR للبريد الإلكتروني بنجاح' %}
   {% set t_sub = 'امسح الرمز أو انقر أدناه لفتح البريد أو تنزيل رمز QR.' %}
   {% set t_open = '📧 فتح البريد' %}
+  {% set t_dynamic = 'الرابط الديناميكي:' %}
+  {% set t_open_dynamic = '🔗 فتح الرابط الديناميكي' %}
   {% set t_download = '⬇️ تنزيل رمز QR' %}
   {% set t_print = '🖨️ طباعة رمز QR' %}
   {% set t_share = '🔗 مشاركة أو تضمين' %}
@@ -25,6 +29,8 @@
   {% set t_h1 = '✅ E-Mail-QR-Code erfolgreich erstellt' %}
   {% set t_sub = 'Scanne den Code oder klicke unten, um deine E-Mail zu öffnen oder den QR-Code herunterzuladen.' %}
   {% set t_open = '📧 E-Mail öffnen' %}
+  {% set t_dynamic = 'Dynamischer Link:' %}
+  {% set t_open_dynamic = '🔗 Dynamischen Link öffnen' %}
   {% set t_download = '⬇️ QR-Code herunterladen' %}
   {% set t_print = '🖨️ QR-Code drucken' %}
   {% set t_share = '🔗 Teilen oder einbetten' %}
@@ -41,7 +47,11 @@
 
   <div class="qr-card">
     <div class="qr-image-container">
-      <img src="data:image/png;base64,{{ qr_image }}" alt="E-Mail QR-Code Vorschau" class="qr-image">
+      {% if qr_image %}
+        <img src="data:image/png;base64,{{ qr_image }}" alt="E-Mail QR-Code Vorschau" class="qr-image">
+      {% elif qr and qr.image_path %}
+        <img src="/{{ qr.image_path }}" alt="E-Mail QR-Code Vorschau" class="qr-image">
+      {% endif %}
     </div>
 
     <div class="qr-details">
@@ -52,6 +62,9 @@
     </div>
 
     <div class="qr-actions">
+      {% if dynamic_url %}
+      <a href="{{ dynamic_url }}" target="_blank" rel="noopener" class="btn secondary">{{ t_open_dynamic }}</a>
+      {% endif %}
       {% if qr and qr.slug %}
       <a href="/qr/export/{{ qr.slug }}?format=png" download="email_qr.png" class="btn primary">{{ t_download }}</a>
       {% else %}
@@ -62,7 +75,10 @@
 
     <div class="share-section">
       <h3>{{ t_share }}</h3>
-      <input type="text" id="qrLink" value="{{ request.url }}" readonly>
+      {% if dynamic_url %}
+      <p style="margin:0 0 0.8rem;"><strong>{{ t_dynamic }}</strong> <a href="{{ dynamic_url }}" target="_blank" rel="noopener">{{ dynamic_url }}</a></p>
+      {% endif %}
+      <input type="text" id="qrLink" value="{{ dynamic_url or request.url }}" readonly>
       <button onclick="copyLink()">{{ t_copy }}</button>
     </div>
   </div>

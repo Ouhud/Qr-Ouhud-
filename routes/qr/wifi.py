@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.qrcode import QRCode
 from routes.qr.logo_utils import save_qr_logo
+from utils.access_control import can_edit_qr
 from utils.qr_generator import generate_qr_png
 from utils.qr_design import resolve_design
 
@@ -169,7 +170,15 @@ async def create_wifi_qr(
     
     return templates.TemplateResponse(
         "qr_wifi_result.html",
-        {"request": request, "qr": qr, "qr_image": qr_base64, "dynamic_url": dynamic_url},
+        {
+            "request": request,
+            "qr": qr,
+            "qr_image": qr_base64,
+            "dynamic_url": dynamic_url,
+            "ssid": ssid,
+            "encryption": encryption,
+            "password": password,
+        },
     )
 
 
@@ -179,8 +188,17 @@ def view_wifi_qr(request: Request, slug: str, db: Session = Depends(get_db)) -> 
     qr = db.query(QRCode).filter(QRCode.slug == slug, QRCode.type == "wifi").first()
     if not qr:
         raise HTTPException(404, "WiFi-QR nicht gefunden")
+
+    session_user_id = request.session.get("user_id")
+    can_edit = False
+    if session_user_id:
+        try:
+            can_edit = can_edit_qr(db, int(session_user_id), qr)
+        except (TypeError, ValueError):
+            can_edit = False
+
     data = qr.get_data() or {}
     return templates.TemplateResponse(
         "qr_wifi_view.html",
-        {"request": request, "qr": qr, "data": data},
+        {"request": request, "qr": qr, "data": data, "can_edit": can_edit},
     )

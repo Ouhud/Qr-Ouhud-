@@ -69,11 +69,25 @@ def view_vcard(request: Request, slug: str, db: Session = Depends(get_db)) -> HT
     qr = db.query(QRCode).filter(QRCode.slug == slug, QRCode.type == "vcard").first()
     if not qr:
         raise HTTPException(404, "vCard nicht gefunden")
-    
+
+    session_user_id = request.session.get("user_id")
+    can_edit = False
+    if session_user_id:
+        try:
+            can_edit = can_edit_qr(db, int(session_user_id), qr)
+        except (TypeError, ValueError):
+            can_edit = False
+
     vcard_data = qr.get_data() or {}  # 🔐 Automatisch entschlüsselt
     return templates.TemplateResponse(
         "vcard.html",
-        {"request": request, "mode": "view", "qr": qr, "vcard": vcard_data}
+        {
+            "request": request,
+            "mode": "view",
+            "qr": qr,
+            "vcard": vcard_data,
+            "can_edit": can_edit,
+        },
     )
 
 

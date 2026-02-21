@@ -179,5 +179,13 @@ async def create_email_qr(
     
     return templates.TemplateResponse(
         "qr_email_result.html",
-        {"request": request, "qr": qr, "qr_image": qr_base64, "dynamic_url": dynamic_url, "mailto": mailto},
+        {
+            "request": request,
+            "qr": qr,
+            "qr_image": qr_base64,
+            "dynamic_url": dynamic_url,
+            "mailto": mailto,
+            "mailto_url": mailto,
+            "title": title or f"Email: {to}",
+        },
     )

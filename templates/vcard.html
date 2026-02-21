@@ -180,7 +180,6 @@
         {% if vcard.google_wallet_url %}
           <a href="{{ vcard.google_wallet_url }}" target="_blank" rel="noopener" class="btn-secondary vc-action-btn">Google Wallet</a>
         {% endif %}
-        <a href="/qr/vcard/edit/{{ qr.slug }}" class="btn-secondary vc-action-btn">{{ tr('Bearbeiten', 'Edit', 'تعديل') }}</a>
       </footer>
     </article>
   </div>
@@ -312,6 +311,7 @@
   margin: 0;
   font-size: 1.55rem;
   line-height: 1.2;
+  color: #fff;
 }
 .vc-role {
   margin: .25rem 0 0;
