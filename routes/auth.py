@@ -173,6 +173,27 @@ def register_user(
         "email": new_user.email,
     }
     request.session["expiry"] = int(timedelta(minutes=30).total_seconds())
+    session_token = secrets.token_urlsafe(24)
+    request.session["session_token"] = session_token
+
+    user_agent = request.headers.get("user-agent", "")
+    ip_addr = request.client.host if request.client else None
+    try:
+        device = LoginDevice(
+            user_id=new_user.id,
+            session_token=session_token,
+            device_name=_detect_device_name(user_agent),
+            ip_address=ip_addr,
+            user_agent=user_agent[:255] if user_agent else None,
+            active=True,
+            last_seen_at=datetime.now(timezone.utc),
+        )
+        db.add(device)
+        new_user.last_login = datetime.now(timezone.utc)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        print(f"⚠️ Login-Gerät bei Registrierung konnte nicht gespeichert werden: {exc}")
 
     print(f"[REGISTER] Neuer Benutzer registriert: {username} ({email})")
 

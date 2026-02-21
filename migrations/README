@@ -24,7 +24,7 @@ PY
 
 
 
-
+uvicorn main:app --reload
 
 
 ssh root@77.42.79.183
